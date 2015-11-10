@@ -85,6 +85,7 @@
         
         var story_store = Ext.create('Rally.data.wsapi.Store',{
             model: 'HierarchicalRequirement',
+            sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID']
         });
