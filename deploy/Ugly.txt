@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TS Super Cardboard</title>
+    <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
+    <!--  Build Date: Tue Nov 10 2015 15:46:05 GMT-0800 (PST) -->
+    
+    <script type="text/javascript">
+        var APP_BUILD_DATE = "Tue Nov 10 2015 15:46:05 GMT-0800 (PST)";
+        var CHECKSUM = [%= checksum %];
+    </script>
+    
+    <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            
+            
+               Rally.launchApp('TSSuperCardboard', {
+                   name: 'TS Super Cardboard'
+               });
+        });
+    </script>
+    
+    <style type="text/css">
+
+div.ts_workproduct_card {
+    margin: 5px;
+    padding: 2px;
+    text-align: center;
+    font-size: 12px;
+}
+
+div.ts_task_card {
+    margin: 2px;
+    padding: 2px;
+    width: 50px;
+    text-align: center;
+    font-size: 9px;
+    border: 1px solid black !important;
+    float: left;
+}
+    </style>
+
+</head>
+<body></body>
+</html>
