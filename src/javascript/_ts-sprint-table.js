@@ -135,15 +135,45 @@
     
     taskTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
-            "<div class='ts_task_card' style='background-color:{DisplayColor};'>{Name:ellipsis(15, false)}</div>",
-        "</tpl>"
+            '<tpl if="this.hasColor(DisplayColor)">',
+                "<div class='ts_task_card' style='background-color:{DisplayColor};color:white;'>",
+            '<tpl else>',
+                "<div class='ts_task_card' style='color:black;'>",
+            '</tpl>',
+        
+            "{Name:ellipsis(15, false)}</div>",
+        "</tpl>",
+        {
+            hasColor: function(color){
+               return !Ext.isEmpty(color);
+            }
+        }
     ),
     
     workproductTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
             '<div class="x4-component rui-card {_type} x4-border-box drag-handle">',
-            '<div class="artifact-color"></div>',
-            "<div class='ts_workproduct_card' style='background-color:{DisplayColor};'>{Name}</div>",
+                '<div class="artifact-color"></div>',
+                '<div class="card-table-ct">',
+                    '<table class="card-table">',
+                        '<tr>',
+                            '<td class="rui-card-content">',
+                                '<div class="left-header”>',
+                                    '<div class="id">',
+                                        '<span class="formatted-id-template">',
+                                            '<a class="formatted-id-link" href="#/729766d/detail/defect/3477916”>',
+                                                '<span class="artifact-icon icon-story"></span>{FormattedID}',
+                                            '</a>',
+                                        '</span>',
+                                    '</div>',
+                                '</div>',
+                                '<div class="field-content Name type-string editable">',
+                                    '<div class="rui-field-value">{Name}</div>',
+                                '</div>',
+                            '</td>',
+                        '<tr/>',
+                    '</table>',
+               '</div>',
             '</div>',
         "</tpl>"
     ),
@@ -236,14 +266,13 @@
         
         var config = {
             model: 'Task',
-            fetch: ['FormattedID', 'Name', 'ObjectID','Project',this.taskStateField],
+            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor','Project',this.taskStateField],
             filters: [{property:'WorkProduct.ObjectID', operator: 'contains', value: oid}]
         };
         
         TSUtilities.loadWSAPIItems(config).then({
             scope: this,
             success: function(tasks) {
-                
                 var tasks_by_workproduct = {};
                 tasks_by_workproduct[oid] = tasks;
                 deferred.resolve(tasks_by_workproduct);

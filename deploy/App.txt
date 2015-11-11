@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Tue Nov 10 2015 15:57:25 GMT-0800 (PST) -->
+    <!--  Build Date: Tue Nov 10 2015 16:47:17 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Nov 10 2015 15:57:25 GMT-0800 (PST)";
-        var CHECKSUM = 6809152134;
+        var APP_BUILD_DATE = "Tue Nov 10 2015 16:47:17 GMT-0800 (PST)";
+        var CHECKSUM = 7549698327;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -340,15 +340,45 @@ Ext.define('TSUtilities',{
     
     taskTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
-            "<div class='ts_task_card' style='background-color:{DisplayColor};'>{Name:ellipsis(15, false)}</div>",
-        "</tpl>"
+            '<tpl if="this.hasColor(DisplayColor)">',
+                "<div class='ts_task_card' style='background-color:{DisplayColor};color:white;'>",
+            '<tpl else>',
+                "<div class='ts_task_card' style='color:black;'>",
+            '</tpl>',
+        
+            "{Name:ellipsis(15, false)}</div>",
+        "</tpl>",
+        {
+            hasColor: function(color){
+               return !Ext.isEmpty(color);
+            }
+        }
     ),
     
     workproductTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
             '<div class="x4-component rui-card {_type} x4-border-box drag-handle">',
-            '<div class="artifact-color"></div>',
-            "<div class='ts_workproduct_card' style='background-color:{DisplayColor};'>{Name}</div>",
+                '<div class="artifact-color"></div>',
+                '<div class="card-table-ct">',
+                    '<table class="card-table">',
+                        '<tr>',
+                            '<td class="rui-card-content">',
+                                '<div class="left-header”>',
+                                    '<div class="id">',
+                                        '<span class="formatted-id-template">',
+                                            '<a class="formatted-id-link" href="#/729766d/detail/defect/3477916”>',
+                                                '<span class="artifact-icon icon-story"></span>{FormattedID}',
+                                            '</a>',
+                                        '</span>',
+                                    '</div>',
+                                '</div>',
+                                '<div class="field-content Name type-string editable">',
+                                    '<div class="rui-field-value">{Name}</div>',
+                                '</div>',
+                            '</td>',
+                        '<tr/>',
+                    '</table>',
+               '</div>',
             '</div>',
         "</tpl>"
     ),
@@ -441,14 +471,13 @@ Ext.define('TSUtilities',{
         
         var config = {
             model: 'Task',
-            fetch: ['FormattedID', 'Name', 'ObjectID','Project',this.taskStateField],
+            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor','Project',this.taskStateField],
             filters: [{property:'WorkProduct.ObjectID', operator: 'contains', value: oid}]
         };
         
         TSUtilities.loadWSAPIItems(config).then({
             scope: this,
             success: function(tasks) {
-                
                 var tasks_by_workproduct = {};
                 tasks_by_workproduct[oid] = tasks;
                 deferred.resolve(tasks_by_workproduct);
