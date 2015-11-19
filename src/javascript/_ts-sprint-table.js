@@ -143,6 +143,22 @@
                     var total_tasks = Ext.Array.merge( old_tasks, [task]);
                     this.set('__Tasks',total_tasks);
                 },this);
+            },
+            addDefects: function(defects) {
+                Ext.Array.each(defects, function(defect){
+                    var state = defect.get(task_state_field);
+                    if ( Ext.isEmpty(this.get(state)) ) {
+                        this.set(state, [defect.getData()]);
+                    } else {
+                        var saved_defects = this.get(state);
+                        saved_defects.push(defect.getData());
+                        this.set(state, saved_defects);
+                    }
+                    
+                    var old_defects = this.get('__Defects') || [];
+                    var total_defects = Ext.Array.merge( old_defects, [defect]);
+                    this.set('__Defects',total_defects);
+                },this);
             }
         });
     },
@@ -150,9 +166,9 @@
     taskTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
             '<tpl if="this.hasColor(DisplayColor)">',
-                "<div id='{ObjectID}' class='ts_task_card {[this.getBlockedClass(values.Blocked)]}' style='background-color:{DisplayColor};color:white;'>",
+                "<div id='{ObjectID}' class='ts_task_card {_type} {[this.getBlockedClass(values.Blocked)]}' style='background-color:{DisplayColor};color:white;'>",
             '<tpl else>',
-                "<div  id='{ObjectID}'  class='ts_task_card {[this.getBlockedClass(values.Blocked)]}' style='color:black;'>",
+                "<div  id='{ObjectID}'  class='ts_task_card {_type} {[this.getBlockedClass(values.Blocked)]}' style='color:black;'>",
             '</tpl>',
         
             "{Name:ellipsis(15, false)}</div>",
@@ -270,25 +286,19 @@
     _updateRows: function(workproducts, table_store) {
         var deferred = Ext.create('Deft.Deferred');
         var me = this;
-        var promises = [];
+
         
-        Ext.Array.each(workproducts, function(workproduct){
-            var oid = workproduct.get('ObjectID');
-            promises.push( function() { return me._loadTasksForArtifact(oid); } );
-        });
-        
-        Deft.Chain.sequence(promises).then({
+        Deft.Chain.sequence([
+            function() { return me._loadTasks(workproducts); },
+            function() { return me._loadDefects(workproducts); }
+        ]).then({
             scope: this,
             success: function(results) {
                 var me = this;
+                var tasks_by_workproduct = results[0];
+                var defects_by_workproduct = results[1];
                 
-                var tasks_by_workproduct = {};
-                // collapse an array of hashes into one hash
-                Ext.Array.each(results, function(tasks_by_a_workproduct){
-                    tasks_by_workproduct = Ext.apply(tasks_by_workproduct, tasks_by_a_workproduct);
-                });
-
-                var rows = this._getRowsFromWorkproducts(workproducts,tasks_by_workproduct);
+                var rows = this._getRowsFromWorkproducts(workproducts,tasks_by_workproduct,defects_by_workproduct);
 
                 table_store.loadRecords(rows);
                 this.fireEvent('gridReady', this, this.grid);
@@ -302,7 +312,65 @@
         return deferred.promise;
     },
     
-    _getRowsFromWorkproducts: function(workproducts,tasks_by_workproduct) {
+    _loadDefects: function(workproducts) {
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var promises = [];
+        
+        Ext.Array.each(workproducts, function(workproduct){
+            var oid = workproduct.get('ObjectID');
+            promises.push( function() { return me._loadDefectsForArtifact(oid); } );
+        });
+        
+        Deft.Chain.sequence(promises).then({
+            scope: this,
+            success: function(defect_array) {
+                var defects_by_workproduct = {};
+                // collapse an array of hashes into one hash
+                Ext.Array.each(defect_array, function(defects_by_a_workproduct){
+                    defects_by_workproduct = Ext.apply(defects_by_workproduct, defects_by_a_workproduct);
+                });
+                
+                deferred.resolve( defects_by_workproduct );
+            },
+            failure: function(msg) {
+                deferred.reject(msg)
+            }
+        });
+        
+        return deferred.promise;
+    },
+    
+    _loadTasks: function(workproducts) {
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+        var promises = [];
+        
+        Ext.Array.each(workproducts, function(workproduct){
+            var oid = workproduct.get('ObjectID');
+            promises.push( function() { return me._loadTasksForArtifact(oid); } );
+        });
+        
+        Deft.Chain.sequence(promises).then({
+            scope: this,
+            success: function(task_array) {
+                var tasks_by_workproduct = {};
+                // collapse an array of hashes into one hash
+                Ext.Array.each(task_array, function(tasks_by_a_workproduct){
+                    tasks_by_workproduct = Ext.apply(tasks_by_workproduct, tasks_by_a_workproduct);
+                });
+                
+                deferred.resolve( tasks_by_workproduct );
+            },
+            failure: function(msg) {
+                deferred.reject(msg)
+            }
+        });
+        
+        return deferred.promise;
+    },
+    
+    _getRowsFromWorkproducts: function(workproducts,tasks_by_workproduct,defects_by_workproduct) {
         var rows = [];
         var me = this;
         
@@ -312,11 +380,37 @@
             });
             
             row.addTasks(tasks_by_workproduct[workproduct.get('ObjectID')] || []);
+            row.addDefects(defects_by_workproduct[workproduct.get('ObjectID')] || []);
             
             rows.push(row);
         });
         
         return rows;
+    },
+    
+    _loadDefectsForArtifact: function(oid) {
+        var deferred = Ext.create('Deft.Deferred');
+        
+        var config = {
+            model: 'Defect',
+            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','DisplayColor',
+                'Blocked','Owner','BlockedReason','Description',this.taskStateField],
+            filters: [{property:'Requirement.ObjectID', value: oid}]
+        };
+        
+        TSUtilities.loadWSAPIItems(config).then({
+            scope: this,
+            success: function(tasks) {
+                var defects_by_workproduct = {};
+                defects_by_workproduct[oid] = tasks;
+                deferred.resolve(defects_by_workproduct);
+            },
+            failure: function(msg) {
+                deferred.reject(msg);
+            }
+        });
+
+        return deferred;
     },
     
     _loadTasksForArtifact: function(oid) {
@@ -381,13 +475,15 @@
     },
     
     _setTaskCardListeners: function(rows) {
-        console.log('_setTaskCardListeners');
         Ext.Array.each(rows, function(row){
+            console.log(row);
             var tasks = row.get('__Tasks') || [];
+            var defects = row.get('__Defects') || [];
             
-            Ext.Array.each(tasks, function(record) {
+            var items = Ext.Array.push(tasks,defects);
+            
+            Ext.Array.each(items, function(record) {
                 var record_oid = record.get('ObjectID');
-                console.log(record_oid);
                 
                 var cards = Ext.query('#' + record_oid);
                 
@@ -404,7 +500,6 @@
     },
     
     _showQuickView: function(record) {
-        console.log('clicked on ', record);
         var me = this;
         Ext.create('Rally.technicalservices.artifact.EditDialog', {
             record: record
