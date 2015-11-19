@@ -87,7 +87,7 @@
             model: 'HierarchicalRequirement',
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
-            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate']
+            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','Blocked']
         });
                 
         story_store.load({
@@ -152,7 +152,7 @@
     
     workproductTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
-            '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard">',
+            '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard {[this.getBlockedClass(values.Blocked)]}">',
                 '<div class="artifact-color"></div>',
                 '<div class="card-table-ct">',
                     '<table class="card-table column-container">',
@@ -200,6 +200,13 @@
         {
             getArtifactURL: function(record){
                 return Rally.nav.Manager.getDetailUrl(record);
+            },
+            
+            getBlockedClass: function(blocked) {
+                if ( blocked !== true ) {
+                    return "";
+                }
+                return "blocked";
             }
         }
     ),

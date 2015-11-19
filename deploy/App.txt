@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Wed Nov 18 2015 18:50:49 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Nov 18 2015 18:59:09 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Nov 18 2015 18:50:49 GMT-0800 (PST)";
-        var CHECKSUM = 8384579921;
+        var APP_BUILD_DATE = "Wed Nov 18 2015 18:59:09 GMT-0800 (PST)";
+        var CHECKSUM = 8548420487;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -292,7 +292,7 @@ Ext.define('TSUtilities',{
             model: 'HierarchicalRequirement',
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
-            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate']
+            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','Blocked']
         });
                 
         story_store.load({
@@ -357,7 +357,7 @@ Ext.define('TSUtilities',{
     
     workproductTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
-            '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard">',
+            '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard {[this.getBlockedClass(values.Blocked)]}">',
                 '<div class="artifact-color"></div>',
                 '<div class="card-table-ct">',
                     '<table class="card-table column-container">',
@@ -405,6 +405,13 @@ Ext.define('TSUtilities',{
         {
             getArtifactURL: function(record){
                 return Rally.nav.Manager.getDetailUrl(record);
+            },
+            
+            getBlockedClass: function(blocked) {
+                if ( blocked !== true ) {
+                    return "";
+                }
+                return "blocked";
             }
         }
     ),
