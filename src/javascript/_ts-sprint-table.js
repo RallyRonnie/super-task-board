@@ -87,14 +87,21 @@
             model: 'HierarchicalRequirement',
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
-            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','Blocked']
+            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
+                'Blocked','Owner','BlockedReason','Description']
         });
                 
         story_store.load({
             scope: this,
             callback : function(records, operation, successful) {
                 if (successful){
-                    this._updateRows(records, this.grid.getStore());
+                    this._updateRows(records, this.grid.getStore()).then({
+                        scope: this,
+                        success: function(rows) {
+                            this._setWorkItemCardListeners(rows);
+                            this._setTaskCardListeners(rows);
+                        }
+                    });
                 } else {
                     console.error('Problem loading: ' + operation.error.errors.join('. '));
                     Ext.Msg.alert('Problem loading milestones', operation.error.errors.join('. '));
@@ -114,6 +121,9 @@
             return { name: name, type: type };
         });
         
+        fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
+        
+        
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
             fields: fields,
@@ -128,6 +138,10 @@
                         saved_tasks.push(task.getData());
                         this.set(state, saved_tasks);
                     }
+                    
+                    var old_tasks = this.get('__Tasks') || [];
+                    var total_tasks = Ext.Array.merge( old_tasks, [task]);
+                    this.set('__Tasks',total_tasks);
                 },this);
             }
         });
@@ -136,9 +150,9 @@
     taskTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
             '<tpl if="this.hasColor(DisplayColor)">',
-                "<div class='ts_task_card' style='background-color:{DisplayColor};color:white;'>",
+                "<div id='{ObjectID}' class='ts_task_card' style='background-color:{DisplayColor};color:grey;'>",
             '<tpl else>',
-                "<div class='ts_task_card' style='color:black;'>",
+                "<div  id='{ObjectID}'  class='ts_task_card' style='color:black;'>",
             '</tpl>',
         
             "{Name:ellipsis(15, false)}</div>",
@@ -154,7 +168,7 @@
         "<tpl for='.'>",
             '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard {[this.getBlockedClass(values.Blocked)]}">',
                 '<div class="artifact-color"></div>',
-                '<div class="card-table-ct">',
+                '<div class="card-table-ct {_type}" id="{ObjectID}" type={_type}">',
                     '<table class="card-table column-container">',
                         '<tr>',
                             '<td class="rui-card-content">',
@@ -215,7 +229,7 @@
         var me = this;
         
         var columns = [{
-            dataIndex: 'WorkProduct',
+            dataIndex: '__WorkProduct',
             text: 'Features',
             flex: 1,
             align: 'center',
@@ -247,6 +261,7 @@
     },
     
     _updateRows: function(workproducts, table_store) {
+        var deferred = Ext.create('Deft.Deferred');
         var me = this;
         var promises = [];
         
@@ -270,11 +285,14 @@
 
                 table_store.loadRecords(rows);
                 this.fireEvent('gridReady', this, this.grid);
+                deferred.resolve(rows);
             },
             failure: function(msg) {
                 Ext.Msg.alert('Problem loading artifacts', msg);
+                deferred.reject();
             }
         });
+        return deferred.promise;
     },
     
     _getRowsFromWorkproducts: function(workproducts,tasks_by_workproduct) {
@@ -283,7 +301,7 @@
         
         Ext.Array.each( workproducts, function(workproduct){
             var row = Ext.create('TSTableRow',{
-                WorkProduct: workproduct
+                __WorkProduct: workproduct
             });
             
             row.addTasks(tasks_by_workproduct[workproduct.get('ObjectID')] || []);
@@ -299,7 +317,9 @@
         
         var config = {
             model: 'Task',
-            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor','Project',this.taskStateField],
+            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor',
+                'Project',this.taskStateField, 'Owner', 'Blocked', 'BlockedReason',
+                'Estimate','ToDo'],
             filters: [{property:'WorkProduct.ObjectID', operator: 'contains', value: oid}]
         };
         
@@ -334,8 +354,55 @@
             }
         });
         return deferred;
+    },
+    
+    _setWorkItemCardListeners: function(rows) {
+        Ext.Array.each(rows, function(row){
+            var record = row.get('__WorkProduct');
+            var record_oid = record.get('ObjectID');
+            var cards = Ext.query('#' + record_oid);
+            
+            if ( cards.length === 0 ) {
+                console.log('Cannot find card for work item', record_oid);
+            } else {
+                var card_element = Ext.get(cards[0]);
+                card_element.on('click', function(evt,c) {
+                    this._showQuickView(record);
+                },this);
+            }
+        },this);
+    },
+    
+    _setTaskCardListeners: function(rows) {
+        console.log('_setTaskCardListeners');
+        Ext.Array.each(rows, function(row){
+            var tasks = row.get('__Tasks') || [];
+            
+            Ext.Array.each(tasks, function(record) {
+                var record_oid = record.get('ObjectID');
+                console.log(record_oid);
+                
+                var cards = Ext.query('#' + record_oid);
+                
+                if ( cards.length === 0 ) {
+                    console.log('Cannot find card for task', record_oid);
+                } else {
+                    var card_element = Ext.get(cards[0]);
+                    card_element.on('click', function(evt,c) {
+                        this._showQuickView(record);
+                    },this);
+                }
+            },this);
+        },this);
+    },
+    
+    _showQuickView: function(record) {
+        console.log('clicked on ', record);
+        var me = this;
+        Ext.create('Rally.technicalservices.artifact.EditDialog', {
+            record: record
+        }).show();
     }
-
     
 
 });

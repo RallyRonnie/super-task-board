@@ -26,3 +26,14 @@ div.ts_task_card {
     border: 1px solid black !important;
     float: left;
 }
+
+.ts-editor-field-label {
+    font-size: 14px;
+    font-weight: bold;
+    text-align: right;
+    background-color: #eee;
+}
+
+.ts-editor-field-contents {
+    font-size: 14px;
+}
