@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Wed Nov 18 2015 21:50:41 GMT-0800 (PST) -->
+    <!--  Build Date: Thu Nov 19 2015 11:37:21 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Nov 18 2015 21:50:41 GMT-0800 (PST)";
-        var CHECKSUM = 19049119181;
+        var APP_BUILD_DATE = "Thu Nov 19 2015 11:37:21 GMT-0800 (PST)";
+        var CHECKSUM = 19624666990;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -413,6 +413,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         
         var story_store = Ext.create('Rally.data.wsapi.Store',{
             model: 'HierarchicalRequirement',
+            context: { projectScopeDown: false, projectScopeUp: false },
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
@@ -499,7 +500,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 "<div  id='{ObjectID}'  class='ts_task_card {_type} {[this.getBlockedClass(values.Blocked)]}' style='color:black;'>",
             '</tpl>',
         
-            "{Name:ellipsis(15, false)}</div>",
+            "{Name:ellipsis(15, true)}</div>",
         "</tpl>",
         {
             hasColor: function(color){
@@ -531,7 +532,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                                             '</a>',
                                         '</span>',
                                     '</div> ',
-                                    '<div class="owner-name-">{Owner._refObjectName}</div>',
+                                    '<div class="owner-name">{[this.getOwnerName(values.Owner)]}</div>',
                                 '</div>',
                                 '<div class="field-content Name type-string">',
                                     '<div class="rui-field-value">{Name}</div>',
@@ -543,7 +544,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                                     '<div class="card-owner-field">',
                                         '<div class="field-content Owner">',
                                             '<div class="rui-field-value">',
-                                                '<img class=" card-owner-img" src="/slm/profile/image/{Owner.ObjectID}/25.sp">',
+                                                '<img class=" card-owner-img" src="{[this.getOwnerImage(values.Owner)]}">',
                                             '</div>',
                                         '</div>',
                                     '</div>',
@@ -572,6 +573,19 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                     return "";
                 }
                 return "blocked";
+            },
+            getOwnerName: function(owner) {
+                console.log('owner', owner);
+                if ( Ext.isEmpty(owner) ) {
+                    return "--";
+                }
+                return owner._refObjectName;
+            },
+            getOwnerImage: function(owner) {
+                if (Ext.isEmpty(owner)) {
+                    return "abc";
+                }
+                return "/slm/profile/image/" + owner.ObjectID + "/25.sp";
             }
         }
     ),
@@ -804,7 +818,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _setTaskCardListeners: function(rows) {
         Ext.Array.each(rows, function(row){
-            console.log(row);
             var tasks = row.get('__Tasks') || [];
             var defects = row.get('__Defects') || [];
             
@@ -1022,6 +1035,7 @@ div.ts_task_card {
     font-size: 9px;
     border: 1px solid black;
     float: left;
+    overflow: hidden;
 }
 
 .ts_task_card.blocked {

@@ -25,6 +25,7 @@ div.ts_task_card {
     font-size: 9px;
     border: 1px solid black;
     float: left;
+    overflow: hidden;
 }
 
 .ts_task_card.blocked {

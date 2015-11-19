@@ -85,6 +85,7 @@
         
         var story_store = Ext.create('Rally.data.wsapi.Store',{
             model: 'HierarchicalRequirement',
+            context: { projectScopeDown: false, projectScopeUp: false },
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
@@ -171,7 +172,7 @@
                 "<div  id='{ObjectID}'  class='ts_task_card {_type} {[this.getBlockedClass(values.Blocked)]}' style='color:black;'>",
             '</tpl>',
         
-            "{Name:ellipsis(15, false)}</div>",
+            "{Name:ellipsis(15, true)}</div>",
         "</tpl>",
         {
             hasColor: function(color){
@@ -203,7 +204,7 @@
                                             '</a>',
                                         '</span>',
                                     '</div> ',
-                                    '<div class="owner-name-">{Owner._refObjectName}</div>',
+                                    '<div class="owner-name">{[this.getOwnerName(values.Owner)]}</div>',
                                 '</div>',
                                 '<div class="field-content Name type-string">',
                                     '<div class="rui-field-value">{Name}</div>',
@@ -215,7 +216,7 @@
                                     '<div class="card-owner-field">',
                                         '<div class="field-content Owner">',
                                             '<div class="rui-field-value">',
-                                                '<img class=" card-owner-img" src="/slm/profile/image/{Owner.ObjectID}/25.sp">',
+                                                '<img class=" card-owner-img" src="{[this.getOwnerImage(values.Owner)]}">',
                                             '</div>',
                                         '</div>',
                                     '</div>',
@@ -244,6 +245,19 @@
                     return "";
                 }
                 return "blocked";
+            },
+            getOwnerName: function(owner) {
+                console.log('owner', owner);
+                if ( Ext.isEmpty(owner) ) {
+                    return "--";
+                }
+                return owner._refObjectName;
+            },
+            getOwnerImage: function(owner) {
+                if (Ext.isEmpty(owner)) {
+                    return "abc";
+                }
+                return "/slm/profile/image/" + owner.ObjectID + "/25.sp";
             }
         }
     ),
@@ -476,7 +490,6 @@
     
     _setTaskCardListeners: function(rows) {
         Ext.Array.each(rows, function(row){
-            console.log(row);
             var tasks = row.get('__Tasks') || [];
             var defects = row.get('__Defects') || [];
             
