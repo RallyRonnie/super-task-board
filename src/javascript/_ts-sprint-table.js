@@ -87,7 +87,7 @@
             model: 'HierarchicalRequirement',
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
-            fetch: ['FormattedID', 'Name', 'ObjectID']
+            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate']
         });
                 
         story_store.load({
@@ -152,30 +152,56 @@
     
     workproductTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
-            '<div class="x4-component rui-card {_type} x4-border-box drag-handle">',
+            '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard">',
                 '<div class="artifact-color"></div>',
                 '<div class="card-table-ct">',
-                    '<table class="card-table">',
+                    '<table class="card-table column-container">',
                         '<tr>',
                             '<td class="rui-card-content">',
-                                '<div class="left-header”>',
-                                    '<div class="id">',
+                                '<div class="left-header">',
+                                    '<div class="id" style="min-width: 68px">',
                                         '<span class="formatted-id-template">',
-                                            '<a class="formatted-id-link" href="#/729766d/detail/defect/3477916”>',
-                                                '<span class="artifact-icon icon-story"></span>{FormattedID}',
+                                            '<a class="formatted-id-link" href="{[this.getArtifactURL(values)]}">',
+                                                '<span class="icon-story"> </span> {FormattedID}',
                                             '</a>',
                                         '</span>',
-                                    '</div>',
+                                    '</div> ',
+                                    '<div class="owner-name-">{Owner._refObjectName}</div>',
                                 '</div>',
-                                '<div class="field-content Name type-string editable">',
+                                '<div class="field-content Name type-string">',
                                     '<div class="rui-field-value">{Name}</div>',
                                 '</div>',
                             '</td>',
+                            
+                            '<td class="rui-card-right-side has-estimate">',
+                                '<div class="right-top-side">',
+                                    '<div class="card-owner-field">',
+                                        '<div class="field-content Owner">',
+                                            '<div class="rui-field-value">',
+                                                '<img class=" card-owner-img" src="/slm/profile/image/{Owner.ObjectID}/25.sp">',
+                                            '</div>',
+                                        '</div>',
+                                    '</div>',
+                                '</div>',
+                                '<div class="right-bottom-side">',
+                                '<div class="card-estimate-field">',
+                                    '<div class="field-content PlanEstimate xeditable" >',
+                                        '<div class="rui-field-value">{PlanEstimate}</div>',
+                                    '</div>',
+                                '</div>',
+                            '</div>',
+                            '</td>',
+                            
                         '<tr/>',
                     '</table>',
                '</div>',
             '</div>',
-        "</tpl>"
+        "</tpl>",
+        {
+            getArtifactURL: function(record){
+                return Rally.nav.Manager.getDetailUrl(record);
+            }
+        }
     ),
     
     _getColumns: function(task_states) {

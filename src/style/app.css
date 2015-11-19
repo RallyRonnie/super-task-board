@@ -5,6 +5,18 @@ div.ts_workproduct_card {
     font-size: 12px;
 }
 
+td {
+    text-align: left;
+    font-weight: normal;
+}
+
+table {
+    display: table;
+    border-collapse: separate;
+    border-spacing: 2px;
+    border-color: grey;
+}
+
 div.ts_task_card {
     margin: 2px;
     padding: 2px;
