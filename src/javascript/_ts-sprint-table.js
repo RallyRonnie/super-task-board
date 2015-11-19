@@ -150,9 +150,9 @@
     taskTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
             '<tpl if="this.hasColor(DisplayColor)">',
-                "<div id='{ObjectID}' class='ts_task_card' style='background-color:{DisplayColor};color:grey;'>",
+                "<div id='{ObjectID}' class='ts_task_card {[this.getBlockedClass(values.Blocked)]}' style='background-color:{DisplayColor};color:white;'>",
             '<tpl else>',
-                "<div  id='{ObjectID}'  class='ts_task_card' style='color:black;'>",
+                "<div  id='{ObjectID}'  class='ts_task_card {[this.getBlockedClass(values.Blocked)]}' style='color:black;'>",
             '</tpl>',
         
             "{Name:ellipsis(15, false)}</div>",
@@ -160,6 +160,13 @@
         {
             hasColor: function(color){
                return !Ext.isEmpty(color);
+            },
+            
+            getBlockedClass: function(blocked) {
+                if ( blocked !== true ) {
+                    return "";
+                }
+                return "blocked";
             }
         }
     ),

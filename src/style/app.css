@@ -23,8 +23,12 @@ div.ts_task_card {
     width: 50px;
     text-align: center;
     font-size: 9px;
-    border: 1px solid black !important;
+    border: 1px solid black;
     float: left;
+}
+
+.ts_task_card.blocked {
+    border: 2px solid red !important;
 }
 
 .ts-editor-field-label {
