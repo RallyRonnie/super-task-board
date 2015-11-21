@@ -1,6 +1,9 @@
 #TS Super Cardboard
 
+
 ## Development Notes
+
+* An example of a field combobox that has fields in an array of models
 
 ### First Load
 

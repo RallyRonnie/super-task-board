@@ -110,7 +110,7 @@ Ext.define("TSSuperCardboard", {
                     attribute_type = attribute_definition.AttributeType;
                 }
                 if (  attribute_type == "BOOLEAN" ) {
-                    return true;
+                    return false;
                 }
                 if ( attribute_type == "STRING" || attribute_type == "STATE" ) {
                     if ( field.get('fieldDefinition').attributeDefinition.Constrained ) {
@@ -127,15 +127,15 @@ Ext.define("TSSuperCardboard", {
         
         return [{
             name: 'taskStateField',
-            xtype: 'rallyfieldcombobox',
-            fieldLabel: 'Task State Field',
-            labelWidth: 75,
+            xtype: 'tsmultimodelfieldcombobox',
+            fieldLabel: 'Child Item Column Field',
+            labelWidth: 150,
             labelAlign: 'left',
-            minWidth: 200,
+            minWidth: 400,
             margin: 10,
             autoExpand: false,
             alwaysExpanded: false,
-            model: 'Task',
+            models: 'Task,Defect',
             listeners: {
                 ready: function(field_box) {
                     me._filterOutExceptChoices(field_box.getStore());

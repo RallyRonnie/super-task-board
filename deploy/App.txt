@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Fri Nov 20 2015 16:48:16 GMT-0800 (PST) -->
+    <!--  Build Date: Fri Nov 20 2015 18:24:55 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Nov 20 2015 16:48:16 GMT-0800 (PST)";
-        var CHECKSUM = 19837249471;
+        var APP_BUILD_DATE = "Fri Nov 20 2015 18:24:55 GMT-0800 (PST)";
+        var CHECKSUM = 21252345813;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -325,6 +325,43 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         this.add( container );
     }
     
+});
+Ext.define('Rally.technicalservices.MultiModelFieldComboBox', {
+    requires: [],
+    extend: 'Rally.ui.combobox.FieldComboBox',
+    alias: 'widget.tsmultimodelfieldcombobox',
+
+    config: {
+        /**
+         * @cfg [{Rally.data.Model/String}] model (required) The models containing the specified field used to populate the store.
+         */
+        model: undefined
+    },
+    constructor: function(config) {
+        this.mergeConfig(config);
+
+        this.store = Ext.create('Ext.data.Store', {
+            fields: [this.valueField, this.displayField, 'fieldDefinition'],
+            data: []
+        });
+
+        return this.callParent([this.config]);
+    },
+
+    initComponent: function() {
+
+        this.callParent(arguments);
+
+//        this.on('afterrender', this._onAfterRender, this);
+//
+//        if (this.model) {
+//            if (Ext.isString(this.model)) {
+//                this._fetchModel();
+//            } else {
+//                this._populateStore();
+//            }
+//        }
+    }
 });
 /**
  */
@@ -776,6 +813,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _getFieldValues: function(model_name,field_name){
         var deferred = Ext.create('Deft.Deferred');
+        
         Rally.data.ModelFactory.getModel({
             type: model_name,
             success: function(model) {
@@ -955,7 +993,7 @@ Ext.define("TSSuperCardboard", {
                     attribute_type = attribute_definition.AttributeType;
                 }
                 if (  attribute_type == "BOOLEAN" ) {
-                    return true;
+                    return false;
                 }
                 if ( attribute_type == "STRING" || attribute_type == "STATE" ) {
                     if ( field.get('fieldDefinition').attributeDefinition.Constrained ) {
@@ -972,7 +1010,7 @@ Ext.define("TSSuperCardboard", {
         
         return [{
             name: 'taskStateField',
-            xtype: 'rallyfieldcombobox',
+            xtype: 'tsmultimodelfieldcombobox',
             fieldLabel: 'Task State Field',
             labelWidth: 75,
             labelAlign: 'left',

@@ -448,6 +448,7 @@
     
     _getFieldValues: function(model_name,field_name){
         var deferred = Ext.create('Deft.Deferred');
+        
         Rally.data.ModelFactory.getModel({
             type: model_name,
             success: function(model) {
