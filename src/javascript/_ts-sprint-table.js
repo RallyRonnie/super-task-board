@@ -216,7 +216,7 @@
                                     '<div class="card-owner-field">',
                                         '<div class="field-content Owner">',
                                             '<div class="rui-field-value">',
-                                                '<img class=" card-owner-img" src="{[this.getOwnerImage(values.Owner)]}">',
+                                                '{[this.getOwnerImage(values.Owner)]}',
                                             '</div>',
                                         '</div>',
                                     '</div>',
@@ -247,7 +247,6 @@
                 return "blocked";
             },
             getOwnerName: function(owner) {
-                console.log('owner', owner);
                 if ( Ext.isEmpty(owner) ) {
                     return "--";
                 }
@@ -255,9 +254,10 @@
             },
             getOwnerImage: function(owner) {
                 if (Ext.isEmpty(owner)) {
-                    return "abc";
+                    return " ";
                 }
-                return "/slm/profile/image/" + owner.ObjectID + "/25.sp";
+                return Ext.String.format('<img class=" card-owner-img" src="/slm/profile/image/{0}/25.sp">', 
+                    owner.ObjectID);
             }
         }
     ),
@@ -358,26 +358,45 @@
     _loadTasks: function(workproducts) {
         var deferred = Ext.create('Deft.Deferred');
         var me = this;
-        var promises = [];
         
+        var workproducts_by_oid = {};
         Ext.Array.each(workproducts, function(workproduct){
             var oid = workproduct.get('ObjectID');
-            promises.push( function() { return me._loadTasksForArtifact(oid); } );
+            workproducts_by_oid[oid] = workproduct;
         });
         
-        Deft.Chain.sequence(promises).then({
+        var iteration_filter = [{property:'Iteration',value:''}];
+        if ( this.iteration ) {
+            iteration_filter = [{property:'Iteration.Name', value:this.iteration.get('Name')}];
+        }
+        
+        var task_store = Ext.create('Rally.data.wsapi.Store',{
+            model: 'Task',
+            context: { projectScopeDown: false, projectScopeUp: false },
+            sorters: [{property:'TaskIndex',direction:'ASC'}],
+            filters: iteration_filter,
+            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor',
+                'Project',this.taskStateField, 'Owner', 'Blocked', 'BlockedReason',
+                'Estimate','ToDo','WorkProduct']
+        });
+        
+        task_store.load({
             scope: this,
-            success: function(task_array) {
-                var tasks_by_workproduct = {};
-                // collapse an array of hashes into one hash
-                Ext.Array.each(task_array, function(tasks_by_a_workproduct){
-                    tasks_by_workproduct = Ext.apply(tasks_by_workproduct, tasks_by_a_workproduct);
-                });
-                
-                deferred.resolve( tasks_by_workproduct );
-            },
-            failure: function(msg) {
-                deferred.reject(msg)
+            callback : function(records, operation, successful) {
+                if (successful){
+                    var tasks_by_workproduct = {};
+                    Ext.Array.each(records, function(record){
+                        var workproduct_oid = record.get('WorkProduct').ObjectID;
+                        if ( Ext.isEmpty(tasks_by_workproduct[workproduct_oid]) ) {
+                            tasks_by_workproduct[workproduct_oid] = [];
+                        }
+                        tasks_by_workproduct[workproduct_oid].push(record);
+                    });
+                    deferred.resolve(tasks_by_workproduct);
+                } else {
+                    console.error('Problem loading: ' + operation.error.errors.join('. '));
+                    Ext.Msg.alert('Problem loading milestones', operation.error.errors.join('. '));
+                }
             }
         });
         
@@ -418,32 +437,6 @@
                 var defects_by_workproduct = {};
                 defects_by_workproduct[oid] = tasks;
                 deferred.resolve(defects_by_workproduct);
-            },
-            failure: function(msg) {
-                deferred.reject(msg);
-            }
-        });
-
-        return deferred;
-    },
-    
-    _loadTasksForArtifact: function(oid) {
-        var deferred = Ext.create('Deft.Deferred');
-        
-        var config = {
-            model: 'Task',
-            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor',
-                'Project',this.taskStateField, 'Owner', 'Blocked', 'BlockedReason',
-                'Estimate','ToDo'],
-            filters: [{property:'WorkProduct.ObjectID', operator: 'contains', value: oid}]
-        };
-        
-        TSUtilities.loadWSAPIItems(config).then({
-            scope: this,
-            success: function(tasks) {
-                var tasks_by_workproduct = {};
-                tasks_by_workproduct[oid] = tasks;
-                deferred.resolve(tasks_by_workproduct);
             },
             failure: function(msg) {
                 deferred.reject(msg);
