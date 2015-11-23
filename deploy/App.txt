@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Fri Nov 20 2015 18:24:55 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Nov 22 2015 15:59:45 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Nov 20 2015 18:24:55 GMT-0800 (PST)";
-        var CHECKSUM = 21252345813;
+        var APP_BUILD_DATE = "Sun Nov 22 2015 15:59:45 GMT-0800 (PST)";
+        var CHECKSUM = 25198328910;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -326,7 +326,12 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     }
     
 });
-Ext.define('Rally.technicalservices.MultiModelFieldComboBox', {
+/**
+ * Makes a combobox of fields where only the fields shared by all the provided models are shown
+ * 
+ */
+ 
+ Ext.define('Rally.technicalservices.MultiModelFieldComboBox', {
     requires: [],
     extend: 'Rally.ui.combobox.FieldComboBox',
     alias: 'widget.tsmultimodelfieldcombobox',
@@ -335,7 +340,7 @@ Ext.define('Rally.technicalservices.MultiModelFieldComboBox', {
         /**
          * @cfg [{Rally.data.Model/String}] model (required) The models containing the specified field used to populate the store.
          */
-        model: undefined
+        models: []
     },
     constructor: function(config) {
         this.mergeConfig(config);
@@ -349,18 +354,111 @@ Ext.define('Rally.technicalservices.MultiModelFieldComboBox', {
     },
 
     initComponent: function() {
-
         this.callParent(arguments);
 
-//        this.on('afterrender', this._onAfterRender, this);
-//
-//        if (this.model) {
-//            if (Ext.isString(this.model)) {
-//                this._fetchModel();
-//            } else {
-//                this._populateStore();
-//            }
-//        }
+        if (!Ext.isEmpty(this.models) ) {
+            if (Ext.isString(this.models)) {
+                this.models = this.models.split(',');
+            }
+            this._fetchModels();
+        }
+    },
+    
+    _fetchSpecificModel: function(model){
+        var deferred = Ext.create('Deft.Deferred');
+
+        Rally.data.ModelFactory.getModel({
+            context: this.context,
+            type: model,
+            success: function(m) {
+                deferred.resolve(m);
+            },
+            scope: this
+        });
+        
+        return deferred.promise;
+    },
+    
+    _fetchModels: function() {
+        var promises = [];
+        var me = this;
+        
+        Ext.Array.each(this.models, function(model){
+            promises.push(function() {
+                return me._fetchSpecificModel(model);
+            });
+        }, this);
+       
+        Deft.Chain.sequence(promises).then({
+            scope: this,
+            success: this._onModelsRetrieved,
+            failure: function(msg) {
+                Ext.Msg.alert("Couldn't retrieve model", msg);
+            }
+        });
+    },
+
+    _onModelsRetrieved: function(models) {
+        this.models = models;
+        this._populateStore();
+    },
+    
+    _populateStore: function() {
+        if (!this.store) {
+            return;
+        }
+                
+        var data = [];
+        var fields_array = [];
+        
+        Ext.Array.each(this.models, function(model) {
+            fields_array.push( Ext.Array.filter(model.getFields(), this._isNotHidden, this) );
+        },this);
+        
+        console.log('fields_array', fields_array);
+        
+        data = this._getSharedPairs(fields_array);
+        
+        //data = _.sortBy(data,'name');
+        
+        console.log('data',data);
+
+        this.store.loadRawData(data);
+        this.setDefaultValue();
+        this.onReady();
+    },
+    
+    _getSharedPairs: function(array_of_fields_for_all_models){
+        var calculations = {};
+        
+        Ext.Array.each(array_of_fields_for_all_models, function(array_of_fields_in_one_model){
+            
+            Ext.Array.each(array_of_fields_in_one_model, function(field){
+                if ( Ext.isEmpty(calculations[field.name]) ) {
+                    calculations[field.name] = {
+                        field: field,
+                        count: 0
+                    };
+                }
+                
+                if ( calculations[field.name].field.displayName == field.displayName ) {
+                    calculations[field.name].count += 1;
+                }
+            });
+        });
+        
+        var number_of_models = array_of_fields_for_all_models.length;
+        
+        var data = Ext.Array.pluck( 
+            Ext.Array.filter(Ext.Object.getValues(calculations), function(calculation){
+                return calculation.count == number_of_models;
+            }), 
+            'field'
+        );
+        
+        return Ext.Array.map(data,function(field){
+            return this._convertFieldToLabelValuePair(field);
+        },this);
     }
 });
 /**
@@ -429,7 +527,9 @@ Ext.define('Rally.technicalservices.MultiModelFieldComboBox', {
                     showPagingToolbar : false,
                     showRowActionsColumn : false,
                     sortableColumns: false,
-                    disableSelection: true
+                    disableSelection: true,
+                    enableColumnMove: false,
+                    enableColumnHide: true /* doesn't do anything yet */
                 });
                 
                 this._loadCards();
@@ -1011,14 +1111,14 @@ Ext.define("TSSuperCardboard", {
         return [{
             name: 'taskStateField',
             xtype: 'tsmultimodelfieldcombobox',
-            fieldLabel: 'Task State Field',
-            labelWidth: 75,
+            fieldLabel: 'Child Item Column Field',
+            labelWidth: 150,
             labelAlign: 'left',
-            minWidth: 200,
+            minWidth: 400,
             margin: 10,
             autoExpand: false,
             alwaysExpanded: false,
-            model: 'Task',
+            models: 'Task,Defect',
             listeners: {
                 ready: function(field_box) {
                     me._filterOutExceptChoices(field_box.getStore());

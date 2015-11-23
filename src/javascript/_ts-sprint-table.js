@@ -64,7 +64,9 @@
                     showPagingToolbar : false,
                     showRowActionsColumn : false,
                     sortableColumns: false,
-                    disableSelection: true
+                    disableSelection: true,
+                    enableColumnMove: false,
+                    enableColumnHide: true /* doesn't do anything yet */
                 });
                 
                 this._loadCards();
