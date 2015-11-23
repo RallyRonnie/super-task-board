@@ -2,6 +2,8 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     extend: 'Rally.ui.dialog.Dialog',
     alias: 'widget.tseditdialog',
 
+    requires: ['Rally.technicalservices.IconUtility'],
+    
     config: {
         /**
          * @cfg record {Rally.data.Model}
@@ -39,9 +41,9 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     },
     
     _getTitle: function(record) {
-        var icons = { 'hierarchicalrequirement':'icon-story', 'defect':'icon-defect', 'task': 'icon-task' };
+        var icon = Rally.technicalservices.IconUtility.getIconForType(record.get('_type'));
         
-        return Ext.String.format("<span class='{0}'> </span>{1}", icons[record.get('_type')], record.get('FormattedID'));
+        return Ext.String.format("<span class='{0}'> </span>{1}", icon, record.get('FormattedID'));
     },
     
     

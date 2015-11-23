@@ -3,9 +3,10 @@
  
  Ext.define('Rally.technicalservices.SprintTable', {
     extend: 'Ext.Container',
-
     alias: 'widget.tssprinttable',
 
+    requires: ['Rally.technicalservices.IconUtility'],
+    
     /**
      * @property {String} cls The base class applied to this object's element
      */
@@ -25,6 +26,7 @@
          * 
          */
         taskStateField: 'State'
+
     },
     
     /**
@@ -80,13 +82,41 @@
     },
     
     _loadCards: function() {
+        var me = this;
+        
+        Deft.Chain.sequence([
+            function() { return me._loadWorkItems('HierarchicalRequirement'); },
+            function() { return me._loadWorkItems('Defect'); }
+        ]).then({
+            scope: this,
+            success: function(results) {
+                var records = Ext.Array.flatten(results);
+                
+                this._updateRows(records, this.grid.getStore()).then({
+                    scope: this,
+                    success: function(rows) {
+                        this._setWorkItemCardListeners(rows);
+                        this._setTaskCardListeners(rows);
+                    }
+                });
+            },
+            failure: function(msg) {
+                Ext.Msg.alert("Problem Loading Iteration Work Items", msg);
+            }
+        });
+        
+    },
+
+    _loadWorkItems: function(artifact_type) {
+        var deferred = Ext.create('Deft.Deferred');
+        
         var iteration_filter = [{property:'Iteration',value:''}];
         if ( this.iteration ) {
             iteration_filter = [{property:'Iteration.Name', value:this.iteration.get('Name')}];
         }
         
-        var story_store = Ext.create('Rally.data.wsapi.Store',{
-            model: 'HierarchicalRequirement',
+        var store = Ext.create('Rally.data.wsapi.Store',{
+            model: artifact_type,
             context: { projectScopeDown: false, projectScopeUp: false },
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
@@ -94,25 +124,19 @@
                 'Blocked','Owner','BlockedReason','Description']
         });
                 
-        story_store.load({
+        store.load({
             scope: this,
             callback : function(records, operation, successful) {
                 if (successful){
-                    this._updateRows(records, this.grid.getStore()).then({
-                        scope: this,
-                        success: function(rows) {
-                            this._setWorkItemCardListeners(rows);
-                            this._setTaskCardListeners(rows);
-                        }
-                    });
+                    deferred.resolve(records);
                 } else {
-                    console.error('Problem loading: ' + operation.error.errors.join('. '));
-                    Ext.Msg.alert('Problem loading milestones', operation.error.errors.join('. '));
+                    deferred.reject( operation.error.errors.join('. ') );
                 }
             }
         });
+        return deferred.promise;
     },
-
+    
     _defineCustomModel: function(columns) {
         var me = this;
         
@@ -202,7 +226,7 @@
                                     '<div class="id" style="min-width: 68px">',
                                         '<span class="formatted-id-template">',
                                             '<a class="formatted-id-link" href="{[this.getArtifactURL(values)]}">',
-                                                '<span class="icon-story"> </span> {FormattedID}',
+                                                '<span class="{[this.getArtifactIcon(values)]}"> </span> {FormattedID}',
                                             '</a>',
                                         '</span>',
                                     '</div> ',
@@ -260,6 +284,11 @@
                 }
                 return Ext.String.format('<img class=" card-owner-img" src="/slm/profile/image/{0}/25.sp">', 
                     owner.ObjectID);
+            },
+            getArtifactIcon: function(record) {
+                var type = record._type;
+                
+                return Rally.technicalservices.IconUtility.getIconForType(type);
             }
         }
     ),
@@ -306,7 +335,7 @@
         
         Deft.Chain.sequence([
             function() { return me._loadTasks(workproducts); },
-            function() { return me._loadDefects(workproducts); }
+            function() { return me._loadChildDefects(workproducts); }
         ]).then({
             scope: this,
             success: function(results) {
@@ -328,7 +357,7 @@
         return deferred.promise;
     },
     
-    _loadDefects: function(workproducts) {
+    _loadChildDefects: function(workproducts) {
         var deferred = Ext.create('Deft.Deferred');
         var me = this;
         var promises = [];
