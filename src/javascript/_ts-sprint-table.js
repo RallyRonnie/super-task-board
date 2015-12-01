@@ -75,7 +75,6 @@
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
-                                console.log('item update',row);
                                 var tasks = row.get('__Tasks') || [];
                                 var defects = row.get('__Defects') || [];
                                 
@@ -230,8 +229,6 @@
             },
             
             setItemField: function(record, field_name, value) {
-                console.log('set value:', field_name, value);
-                
                 record.set(field_name, value);
                 record.save();
             }
