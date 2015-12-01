@@ -95,8 +95,8 @@
                 this._updateRows(records, this.grid.getStore()).then({
                     scope: this,
                     success: function(rows) {
+                        this._addTaskCards(rows);
                         this._setWorkItemCardListeners(rows);
-                        this._setTaskCardListeners(rows);
                     }
                 });
             },
@@ -150,7 +150,6 @@
         
         fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
         
-        
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
             fields: fields,
@@ -188,6 +187,26 @@
                 },this);
             }
         });
+    },
+    
+    _createTaskCard: function(record_oid, record){
+        var tasks = Ext.query('#' + record_oid);
+        
+        if ( tasks.length === 0 ) {
+            console.log('Cannot find card for task', record_oid);
+        } else {
+            var card_element = Ext.get(tasks[0]);
+
+            var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
+                record: record,
+                renderTo: card_element,
+                draggable: true
+            });
+            
+            card_element.on('click', function(evt,c) {
+                this._showQuickView(record);
+            },this);
+        }
     },
     
     taskTemplate: new Ext.XTemplate(
@@ -313,7 +332,18 @@
                 flex: 1,
                 align: 'center',
                 renderer: function(value) {
-                    return me.taskTemplate.apply(value);
+                    var html = [];
+                    Ext.Array.each(value, function(item){
+                        html.push(
+                            Ext.String.format(
+                                '<div id="{0}" style="height:37px;float: left;"></div>',
+                                item.ObjectID
+                            )
+                        );
+                    });
+                    
+                    //return me.taskTemplate.apply(value);
+                    return html.join('\n');
                 }
             });
         });
@@ -496,6 +526,20 @@
         return deferred;
     },
     
+    _addTaskCards: function(rows) {
+        Ext.Array.each(rows, function(row){
+            var tasks = row.get('__Tasks') || [];
+            var defects = row.get('__Defects') || [];
+            
+            var items = Ext.Array.push(tasks,defects);
+            
+            Ext.Array.each(items, function(record) {
+                var record_oid = record.get('ObjectID');
+                this._createTaskCard(record_oid,record);
+            },this);
+        },this);
+    },
+    
     _setWorkItemCardListeners: function(rows) {
         Ext.Array.each(rows, function(row){
             var record = row.get('__WorkProduct');
@@ -510,30 +554,6 @@
                     this._showQuickView(record);
                 },this);
             }
-        },this);
-    },
-    
-    _setTaskCardListeners: function(rows) {
-        Ext.Array.each(rows, function(row){
-            var tasks = row.get('__Tasks') || [];
-            var defects = row.get('__Defects') || [];
-            
-            var items = Ext.Array.push(tasks,defects);
-            
-            Ext.Array.each(items, function(record) {
-                var record_oid = record.get('ObjectID');
-                
-                var cards = Ext.query('#' + record_oid);
-                
-                if ( cards.length === 0 ) {
-                    console.log('Cannot find card for task', record_oid);
-                } else {
-                    var card_element = Ext.get(cards[0]);
-                    card_element.on('click', function(evt,c) {
-                        this._showQuickView(record);
-                    },this);
-                }
-            },this);
         },this);
     },
     

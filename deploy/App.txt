@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sun Nov 22 2015 17:06:58 GMT-0800 (PST) -->
+    <!--  Build Date: Mon Nov 30 2015 19:44:52 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Nov 22 2015 17:06:58 GMT-0800 (PST)";
-        var CHECKSUM = 27180402542;
+        var APP_BUILD_DATE = "Mon Nov 30 2015 19:44:52 GMT-0800 (PST)";
+        var CHECKSUM = 31698469624;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -577,8 +577,8 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 this._updateRows(records, this.grid.getStore()).then({
                     scope: this,
                     success: function(rows) {
+                        this._addTaskCards(rows);
                         this._setWorkItemCardListeners(rows);
-                        this._setTaskCardListeners(rows);
                     }
                 });
             },
@@ -632,7 +632,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         
         fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
         
-        
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
             fields: fields,
@@ -670,6 +669,26 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 },this);
             }
         });
+    },
+    
+    _createTaskCard: function(record_oid, record){
+        var tasks = Ext.query('#' + record_oid);
+        
+        if ( tasks.length === 0 ) {
+            console.log('Cannot find card for task', record_oid);
+        } else {
+            var card_element = Ext.get(tasks[0]);
+
+            var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
+                record: record,
+                renderTo: card_element,
+                draggable: true
+            });
+            
+            card_element.on('click', function(evt,c) {
+                this._showQuickView(record);
+            },this);
+        }
     },
     
     taskTemplate: new Ext.XTemplate(
@@ -795,7 +814,18 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 flex: 1,
                 align: 'center',
                 renderer: function(value) {
-                    return me.taskTemplate.apply(value);
+                    var html = [];
+                    Ext.Array.each(value, function(item){
+                        html.push(
+                            Ext.String.format(
+                                '<div id="{0}" style="height:37px;float: left;"></div>',
+                                item.ObjectID
+                            )
+                        );
+                    });
+                    
+                    //return me.taskTemplate.apply(value);
+                    return html.join('\n');
                 }
             });
         });
@@ -978,6 +1008,20 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         return deferred;
     },
     
+    _addTaskCards: function(rows) {
+        Ext.Array.each(rows, function(row){
+            var tasks = row.get('__Tasks') || [];
+            var defects = row.get('__Defects') || [];
+            
+            var items = Ext.Array.push(tasks,defects);
+            
+            Ext.Array.each(items, function(record) {
+                var record_oid = record.get('ObjectID');
+                this._createTaskCard(record_oid,record);
+            },this);
+        },this);
+    },
+    
     _setWorkItemCardListeners: function(rows) {
         Ext.Array.each(rows, function(row){
             var record = row.get('__WorkProduct');
@@ -995,30 +1039,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         },this);
     },
     
-    _setTaskCardListeners: function(rows) {
-        Ext.Array.each(rows, function(row){
-            var tasks = row.get('__Tasks') || [];
-            var defects = row.get('__Defects') || [];
-            
-            var items = Ext.Array.push(tasks,defects);
-            
-            Ext.Array.each(items, function(record) {
-                var record_oid = record.get('ObjectID');
-                
-                var cards = Ext.query('#' + record_oid);
-                
-                if ( cards.length === 0 ) {
-                    console.log('Cannot find card for task', record_oid);
-                } else {
-                    var card_element = Ext.get(cards[0]);
-                    card_element.on('click', function(evt,c) {
-                        this._showQuickView(record);
-                    },this);
-                }
-            },this);
-        },this);
-    },
-    
     _showQuickView: function(record) {
         var me = this;
         Ext.create('Rally.technicalservices.artifact.EditDialog', {
@@ -1029,6 +1049,77 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
 
 });
 
+Ext.define('Rally.technicalservices.sprintboard.TaskCard',{
+    extend: 'Ext.Component',
+    alias: 'widget.tstaskcard',
+    
+    config: {
+       /**
+         * @cfg {Rally.data.Model} (required)
+         * The data store record that this card represents
+         */
+        record: undefined
+    },
+    
+    constructor: function (config) {
+        config = config || {};
+        
+        //console.log(Ext.getClass(config.record).superclass.self.getName());
+        if ( config && config.record && !Ext.isEmpty( Ext.getClass(config.record) )) {
+            config.record = config.record.getData();
+        }
+        
+        this.mergeConfig(config);
+
+        this.callParent([this.config]);
+    },
+
+    initComponent: function () {
+        this.callParent();
+
+//        this.addEvents(
+//            
+//        );
+        
+    },
+    
+//     '<tpl if="this.hasColor(DisplayColor)">',
+//                "<div id='T{record.ObjectID}' class='ts_task_card {record._type} {[this.getBlockedClass(values.record.Blocked)]}' style='background-color:{record.DisplayColor};color:white;'>",
+//            '<tpl else>',
+//                "<div  id='T{record.ObjectID}'  class='ts_task_card {record_type} {[this.getBlockedClass(values.record.Blocked)]}' style='color:black;'>",
+//            '</tpl>',
+//        
+//            "{record.Name:ellipsis(15, true)}</div>",
+    renderTpl: new Ext.XTemplate(
+        '<tpl if="this.hasColor($comp.record.DisplayColor)">',
+            '<div class="ts_task_card {$comp.record._type} {[this.getBlockedClass(values.$comp.record.Blocked)]}" style="{[this.getStyle(values.$comp.record)]}">',
+                '{$comp.record.Name:ellipsis(15, true)}',
+            '</div>',
+        '</tpl>',
+        {
+            hasColor: function(color){
+                return !Ext.isEmpty(color);
+            },
+            getStyle: function(record) {
+                
+                if (!Ext.isEmpty(record.DisplayColor)) {
+                    return Ext.String.format("background-color:{0};color:white;",
+                         record.DisplayColor
+                     );
+                }
+                return "color:black;";
+            },
+            
+            getBlockedClass: function(blocked) {
+                if ( blocked !== true ) {
+                    return "";
+                }
+                return "blocked";
+            }
+        }
+    )
+    
+});
 Ext.define("TSSuperCardboard", {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -1210,6 +1301,7 @@ div.ts_task_card {
     margin: 2px;
     padding: 2px;
     width: 50px;
+    height:35px;
     text-align: center;
     font-size: 9px;
     border: 1px solid black;
