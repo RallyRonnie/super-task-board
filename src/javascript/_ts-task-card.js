@@ -33,17 +33,13 @@ Ext.define('Rally.technicalservices.sprintboard.TaskCard',{
     },
     
     renderTpl: new Ext.XTemplate(
-        '<tpl if="this.hasColor($comp.record.DisplayColor)">',
+        '<tpl>',
             '<div id="T{$comp.record.ObjectID}" class="ts_task_card {$comp.record._type} {[this.getBlockedClass(values.$comp.record.Blocked)]}" style="{[this.getStyle(values.$comp.record)]}">',
                 '{$comp.record.Name:ellipsis(15, true)}',
             '</div>',
         '</tpl>',
         {
-            hasColor: function(color){
-                return !Ext.isEmpty(color);
-            },
             getStyle: function(record) {
-                
                 if (!Ext.isEmpty(record.DisplayColor)) {
                     return Ext.String.format("background-color:{0};color:white;",
                          record.DisplayColor

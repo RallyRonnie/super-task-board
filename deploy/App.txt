@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Mon Nov 30 2015 22:24:57 GMT-0800 (PST) -->
+    <!--  Build Date: Mon Nov 30 2015 23:27:53 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Nov 30 2015 22:24:57 GMT-0800 (PST)";
-        var CHECKSUM = 49892965055;
+        var APP_BUILD_DATE = "Mon Nov 30 2015 23:27:53 GMT-0800 (PST)";
+        var CHECKSUM = 65439332961;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -837,7 +837,14 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
          * The name of the field that is used for the task columns
          * 
          */
-        taskStateField: 'State'
+        taskStateField: 'State',
+        /**
+         * 
+         * @cfg {object} 
+         * Has a key for each allowed value in taskStateField and values for show and a task State to map to it
+         * 
+         */
+        columnSettings: null
 
     },
     
@@ -893,7 +900,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                                 var items = Ext.Array.push(tasks,defects);
                                 
                                 Ext.Array.each(items, function(record) {
-                                    var record_oid = record.get('ObjectID');
+                                    var record_oid = record.ObjectID || record.get('ObjectID');
                                     this._createTaskCard(record_oid,record);
                                 },this);
                             }
@@ -975,6 +982,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         var me = this;
         
         var task_state_field = this.taskStateField;
+        var columnSettings = this.columnSettings;
         
         var fields = Ext.Array.map(columns, function(column){
             var name = column.dataIndex;
@@ -983,6 +991,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         });
         
         fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
+        fields.push({ name: '__Defects', type: 'object', defaultValue: []});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -1042,12 +1051,20 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             
             setItemField: function(record, field_name, value) {
                 record.set(field_name, value);
+                
+                if ( record.get('_type') == 'task' && field_name !== "State" && field_name == task_state_field && !Ext.isEmpty( columnSettings )) {
+                    var setting = columnSettings[value];
+                    if ( !Ext.isEmpty(setting['stateMapping'])) {
+                        record.set('State', setting['stateMapping']);
+                    }
+                }
                 record.save();
             }
         });
     },
     
     _createTaskCard: function(record_oid, record){
+        
         var me = this;
         var tasks = Ext.query('#' + record_oid);
         
@@ -1192,7 +1209,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 align: 'center',
                 renderer: function(value) {
                     var html = [];
-                    console.log('renderer', state, value);
                     
                     Ext.Array.each(value, function(item){
                         html.push(
@@ -1325,7 +1341,9 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         
         Ext.Array.each( workproducts, function(workproduct){
             var row = Ext.create('TSTableRow',{
-                __WorkProduct: workproduct
+                __WorkProduct: workproduct,
+                __Tasks: [],
+                __Defects: []
             });
             
             row.addTasks(tasks_by_workproduct[workproduct.get('ObjectID')] || []);
@@ -1383,6 +1401,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     
     _addTaskCards: function(rows) {
         Ext.Array.each(rows, function(row){
+            
             var tasks = row.get('__Tasks') || [];
             var defects = row.get('__Defects') || [];
             
@@ -1457,17 +1476,13 @@ Ext.define('Rally.technicalservices.sprintboard.TaskCard',{
     },
     
     renderTpl: new Ext.XTemplate(
-        '<tpl if="this.hasColor($comp.record.DisplayColor)">',
+        '<tpl>',
             '<div id="T{$comp.record.ObjectID}" class="ts_task_card {$comp.record._type} {[this.getBlockedClass(values.$comp.record.Blocked)]}" style="{[this.getStyle(values.$comp.record)]}">',
                 '{$comp.record.Name:ellipsis(15, true)}',
             '</div>',
         '</tpl>',
         {
-            hasColor: function(color){
-                return !Ext.isEmpty(color);
-            },
             getStyle: function(record) {
-                
                 if (!Ext.isEmpty(record.DisplayColor)) {
                     return Ext.String.format("background-color:{0};color:white;",
                          record.DisplayColor
@@ -1486,6 +1501,211 @@ Ext.define('Rally.technicalservices.sprintboard.TaskCard',{
     )
     
 });
+/**
+ * Allows configuration of task state mapping for kanban columns
+ *
+ *      @example
+ *      Ext.create('Ext.Container', {
+ *          items: [{
+ *              xtype: 'tscolumnsettingsfield',
+ *              value: {}
+ *          }],
+ *          renderTo: Ext.getBody().dom
+ *      });
+ *
+ */
+Ext.define('Rally.technicalservices.ColumnSettingsField', {
+    extend: 'Ext.form.field.Base',
+    alias: 'widget.tscolumnsettingsfield',
+    plugins: ['rallyfieldvalidationui'],
+    requires: [
+        'Rally.ui.combobox.ComboBox',
+        'Rally.ui.TextField',
+        'Rally.ui.combobox.FieldValueComboBox',
+        'Rally.ui.plugin.FieldValidationUi'
+    ],
+
+    fieldSubTpl: '<div id="{id}" class="settings-grid"></div>',
+
+    width: 600,
+    cls: 'column-settings',
+
+    config: {
+        /**
+         * @cfg {Object}
+         *
+         * The column settings value for this field
+         */
+        value: undefined,
+
+        defaultCardFields: ''
+    },
+
+    onDestroy: function() {
+        if (this._grid) {
+            this._grid.destroy();
+            delete this._grid;
+        }
+        this.callParent(arguments);
+    },
+
+    onRender: function() {
+        this.callParent(arguments);
+
+        this._store = Ext.create('Ext.data.Store', {
+            fields: ['column', 'shown', 'stateMapping' ],
+            data: []
+        });
+
+        this._grid = Ext.create('Rally.ui.grid.Grid', {
+            autoWidth: true,
+            renderTo: this.inputEl,
+            columnCfgs: this._getColumnCfgs(),
+            showPagingToolbar: false,
+            showRowActionsColumn: false,
+            enableRanking: false,
+            store: this._store,
+            editingConfig: {
+                publishMessages: false
+            }
+        });
+    },
+
+    _getColumnCfgs: function() {
+        var columns = [
+            {
+                text: 'Column',
+                dataIndex: 'column',
+                emptyCellText: 'None',
+                flex: 2
+            },
+            {
+                text: 'Show',
+                dataIndex: 'shown',
+                flex: 1,
+                renderer: function (value) {
+                    return value === true ? 'Yes' : 'No';
+                },
+                editor: {
+                    xtype: 'rallycombobox',
+                    displayField: 'name',
+                    valueField: 'value',
+                    editable: false,
+                    storeType: 'Ext.data.Store',
+                    storeConfig: {
+                        remoteFilter: false,
+                        fields: ['name', 'value'],
+                        data: [
+                            {'name': 'Yes', 'value': true},
+                            {'name': 'No', 'value': false}
+                        ]
+                    }
+                }
+            },
+            {
+                text: 'State Mapping',
+                dataIndex: 'stateMapping',
+                emptyCellText: '--No Mapping--',
+                flex: 2,
+                editor: {
+                    xtype: 'rallyfieldvaluecombobox',
+                    model: Ext.identityFn('Task'),
+                    field: 'State',
+                    listeners: {
+                        ready: function (combo) {
+                            var noMapping = {};
+                            noMapping[combo.displayField] = '--No Mapping--';
+                            noMapping[combo.valueField] = '';
+
+                            combo.store.insert(0, [noMapping]);
+                        }
+                    }
+                }
+            }
+        ];
+
+        return columns;
+    },
+
+    /**
+     * When a form asks for the data this field represents,
+     * give it the name of this field and the ref of the selected project (or an empty string).
+     * Used when persisting the value of this field.
+     * @return {Object}
+     */
+    getSubmitData: function() {
+        var data = {};
+        data[this.name] = Ext.JSON.encode(this._buildSettingValue());
+        return data;
+    },
+
+    _buildSettingValue: function() {
+        var columns = {};
+        this._store.each(function(record) {
+            if (record.get('shown')) {
+                columns[record.get('column')] = {
+                    stateMapping: record.get('stateMapping')
+                };
+                
+            }
+        }, this);
+        return columns;
+    },
+
+    getErrors: function() {
+        var errors = [];
+        if (this._storeLoaded && !Ext.Object.getSize(this._buildSettingValue())) {
+            errors.push('At least one column must be shown.');
+        }
+        return errors;
+    },
+
+    setValue: function(value) {
+        this.callParent(arguments);
+        this._value = value;
+    },
+
+    _getColumnValue: function(columnName) {
+        var value = this._value;
+        return value && Ext.JSON.decode(value)[columnName];
+    },
+
+    refreshWithNewField: function(field) {
+        delete this._storeLoaded;
+        field.getAllowedValueStore().load({
+            callback: function(records, operation, success) {
+                var data = Ext.Array.map(records, this._recordToGridRow, this);
+                this._store.loadRawData(data);
+                this.fireEvent('ready');
+                this._storeLoaded = true;
+            },
+            scope: this
+        });
+    },
+
+    _recordToGridRow: function(allowedValue) {
+        var columnName = allowedValue.get('StringValue');
+        var pref = this._store.getCount() === 0 ? this._getColumnValue(columnName) : null;
+
+        var column = {
+            column: columnName,
+            shown: false,
+            stateMapping: ''
+        };
+
+        if (pref) {
+            Ext.apply(column, {
+                shown: true,
+                stateMapping: pref.stateMapping
+            });
+
+        }
+
+        return column;
+
+    }
+});
+
 Ext.define("TSSuperCardboard", {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -1540,10 +1760,20 @@ Ext.define("TSSuperCardboard", {
         
         this.setLoading('Fetching items in iteration ' + this.iteration.get('Name'));
         
+        // columns: "{"":{"stateMapping":"Defined"},"Project Management":{"stateMapping":"Defined"},"QA Testing":{"stateMapping":"In-Progress"},"Software Development":{"stateMapping":""},"Planning (Non-Cap)":{"stateMapping":""},"Default (Non-Cap)":{"stateMapping":""}}"
+    
+        var columnSettings = null;
+        if ( !Ext.isEmpty(this.getSetting('columns') ) ){
+            columnSettings = this.getSetting('columns');
+            if ( Ext.isString(columnSettings)) {
+                columnSettings = Ext.JSON.decode(columnSettings);
+            }
+        }
         this.sprint_table = this.down('#display_box').add({ 
             xtype: 'tssprinttable',
             iteration: this.iteration,
             taskStateField: this.getSetting('taskStateField'),
+            columnSettings: columnSettings,
             listeners: {
                 gridReady: function() {
                     me.setLoading(false);
@@ -1625,11 +1855,37 @@ Ext.define("TSSuperCardboard", {
             alwaysExpanded: false,
             models: 'Task,Defect',
             listeners: {
+                select: function(field_box) {
+                    this.fireEvent('fieldselected', field_box.getRecord().get('fieldDefinition'));
+                },
+                
                 ready: function(field_box) {
-                    me._filterOutExceptChoices(field_box.getStore());
+                me._filterOutExceptChoices(field_box.getStore());
+                    if (field_box.getRecord()) {
+                        this.fireEvent('fieldselected', field_box.getRecord().get('fieldDefinition'));
+                    }
                 }
             },
-            readyEvent: 'ready'
+            bubbleEvents: ['fieldselected', 'fieldready']
+        },
+            
+        {
+            name: 'columns',
+            readyEvent: 'ready',
+            fieldLabel: '',
+            margin: '5px 0 0 80px',
+            xtype: 'tscolumnsettingsfield',
+            handlesEvents: {
+                fieldselected: function(field) {
+                    this.refreshWithNewField(field);
+                }
+            },
+            listeners: {
+                ready: function() {
+                    this.fireEvent('columnsettingsready');
+                }
+            },
+            bubbleEvents: 'columnsettingsready'
         }];
     }
         

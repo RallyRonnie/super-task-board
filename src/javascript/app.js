@@ -52,10 +52,20 @@ Ext.define("TSSuperCardboard", {
         
         this.setLoading('Fetching items in iteration ' + this.iteration.get('Name'));
         
+        // columns: "{"":{"stateMapping":"Defined"},"Project Management":{"stateMapping":"Defined"},"QA Testing":{"stateMapping":"In-Progress"},"Software Development":{"stateMapping":""},"Planning (Non-Cap)":{"stateMapping":""},"Default (Non-Cap)":{"stateMapping":""}}"
+    
+        var columnSettings = null;
+        if ( !Ext.isEmpty(this.getSetting('columns') ) ){
+            columnSettings = this.getSetting('columns');
+            if ( Ext.isString(columnSettings)) {
+                columnSettings = Ext.JSON.decode(columnSettings);
+            }
+        }
         this.sprint_table = this.down('#display_box').add({ 
             xtype: 'tssprinttable',
             iteration: this.iteration,
             taskStateField: this.getSetting('taskStateField'),
+            columnSettings: columnSettings,
             listeners: {
                 gridReady: function() {
                     me.setLoading(false);
@@ -137,11 +147,37 @@ Ext.define("TSSuperCardboard", {
             alwaysExpanded: false,
             models: 'Task,Defect',
             listeners: {
+                select: function(field_box) {
+                    this.fireEvent('fieldselected', field_box.getRecord().get('fieldDefinition'));
+                },
+                
                 ready: function(field_box) {
-                    me._filterOutExceptChoices(field_box.getStore());
+                me._filterOutExceptChoices(field_box.getStore());
+                    if (field_box.getRecord()) {
+                        this.fireEvent('fieldselected', field_box.getRecord().get('fieldDefinition'));
+                    }
                 }
             },
-            readyEvent: 'ready'
+            bubbleEvents: ['fieldselected', 'fieldready']
+        },
+            
+        {
+            name: 'columns',
+            readyEvent: 'ready',
+            fieldLabel: '',
+            margin: '5px 0 0 80px',
+            xtype: 'tscolumnsettingsfield',
+            handlesEvents: {
+                fieldselected: function(field) {
+                    this.refreshWithNewField(field);
+                }
+            },
+            listeners: {
+                ready: function() {
+                    this.fireEvent('columnsettingsready');
+                }
+            },
+            bubbleEvents: 'columnsettingsready'
         }];
     }
         

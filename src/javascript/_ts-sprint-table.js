@@ -25,7 +25,14 @@
          * The name of the field that is used for the task columns
          * 
          */
-        taskStateField: 'State'
+        taskStateField: 'State',
+        /**
+         * 
+         * @cfg {object} 
+         * Has a key for each allowed value in taskStateField and values for show and a task State to map to it
+         * 
+         */
+        columnSettings: null
 
     },
     
@@ -81,7 +88,7 @@
                                 var items = Ext.Array.push(tasks,defects);
                                 
                                 Ext.Array.each(items, function(record) {
-                                    var record_oid = record.get('ObjectID');
+                                    var record_oid = record.ObjectID || record.get('ObjectID');
                                     this._createTaskCard(record_oid,record);
                                 },this);
                             }
@@ -163,6 +170,7 @@
         var me = this;
         
         var task_state_field = this.taskStateField;
+        var columnSettings = this.columnSettings;
         
         var fields = Ext.Array.map(columns, function(column){
             var name = column.dataIndex;
@@ -171,6 +179,7 @@
         });
         
         fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
+        fields.push({ name: '__Defects', type: 'object', defaultValue: []});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -230,12 +239,20 @@
             
             setItemField: function(record, field_name, value) {
                 record.set(field_name, value);
+                
+                if ( record.get('_type') == 'task' && field_name !== "State" && field_name == task_state_field && !Ext.isEmpty( columnSettings )) {
+                    var setting = columnSettings[value];
+                    if ( !Ext.isEmpty(setting['stateMapping'])) {
+                        record.set('State', setting['stateMapping']);
+                    }
+                }
                 record.save();
             }
         });
     },
     
     _createTaskCard: function(record_oid, record){
+        
         var me = this;
         var tasks = Ext.query('#' + record_oid);
         
@@ -380,7 +397,6 @@
                 align: 'center',
                 renderer: function(value) {
                     var html = [];
-                    console.log('renderer', state, value);
                     
                     Ext.Array.each(value, function(item){
                         html.push(
@@ -513,7 +529,9 @@
         
         Ext.Array.each( workproducts, function(workproduct){
             var row = Ext.create('TSTableRow',{
-                __WorkProduct: workproduct
+                __WorkProduct: workproduct,
+                __Tasks: [],
+                __Defects: []
             });
             
             row.addTasks(tasks_by_workproduct[workproduct.get('ObjectID')] || []);
@@ -571,6 +589,7 @@
     
     _addTaskCards: function(rows) {
         Ext.Array.each(rows, function(row){
+            
             var tasks = row.get('__Tasks') || [];
             var defects = row.get('__Defects') || [];
             
