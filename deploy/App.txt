@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Mon Nov 30 2015 19:44:52 GMT-0800 (PST) -->
+    <!--  Build Date: Mon Nov 30 2015 22:24:12 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Nov 30 2015 19:44:52 GMT-0800 (PST)";
-        var CHECKSUM = 31698469624;
+        var APP_BUILD_DATE = "Mon Nov 30 2015 22:24:12 GMT-0800 (PST)";
+        var CHECKSUM = 50111659906;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -346,6 +346,336 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
 });
 /**
+ *
+ * Note that the plugin must be added to the grid view, not to the grid panel. For example, using {@link Ext.panel.Table viewConfig}:
+ *
+ *      viewConfig: {
+ *          plugins: {
+ *              ptype: 'tscelldragdrop',
+ *          }
+ *      }
+ */
+Ext.define('Rally.technicalservices.TSCellDragDrop', {
+    extend: 'Ext.AbstractPlugin',
+    alias: 'plugin.tscelldragdrop',
+
+    uses: ['Ext.view.DragZone'],
+
+    /**
+     * @cfg {Boolean} enforceType
+     * Set to `true` to only allow drops of the same type.
+     *
+     * Defaults to `false`.
+     */
+    enforceType: false,
+
+    /**
+     * @cfg {Boolean} applyEmptyText
+     * If `true`, then use the value of {@link #emptyText} to replace the drag record's value after a node drop.
+     * Note that, if dropped on a cell of a different type, it will convert the default text according to its own conversion rules.
+     *
+     * Defaults to `false`.
+     */
+    applyEmptyText: false,
+
+    /**
+     * @cfg {Boolean} emptyText
+     * If {@link #applyEmptyText} is `true`, then this value as the drag record's value after a node drop.
+     *
+     * Defaults to an empty string.
+     */
+    emptyText: '',
+
+    /**
+     * @cfg {Boolean} dropBackgroundColor
+     * The default background color for when a drop is allowed.
+     *
+     * Defaults to green.
+     */
+    dropBackgroundColor: 'green',
+
+    /**
+     * @cfg {Boolean} noDropBackgroundColor
+     * The default background color for when a drop is not allowed.
+     *
+     * Defaults to red.
+     */
+    noDropBackgroundColor: 'red',
+
+    //<locale>
+    /**
+     * @cfg {String} dragText
+     * The text to show while dragging.
+     *
+     * Two placeholders can be used in the text:
+     *
+     * - `{0}` The number of selected items.
+     * - `{1}` 's' when more than 1 items (only useful for English).
+     */
+    dragText: '{0} selected row{1}',
+    //</locale>
+
+    /**
+     * @cfg {String} ddGroup
+     * A named drag drop group to which this object belongs. If a group is specified, then both the DragZones and
+     * DropZone used by this plugin will only interact with other drag drop objects in the same group.
+     */
+    ddGroup: "GridDD",
+
+    /**
+     * @cfg {Boolean} enableDrop
+     * Set to `false` to disallow the View from accepting drop gestures.
+     */
+    enableDrop: true,
+
+    /**
+     * @cfg {Boolean} enableDrag
+     * Set to `false` to disallow dragging items from the View.
+     */
+    enableDrag: true,
+
+    /**
+     * @cfg {Object/Boolean} containerScroll
+     * True to register this container with the Scrollmanager for auto scrolling during drag operations.
+     * A {@link Ext.dd.ScrollManager} configuration may also be passed.
+     */
+    containerScroll: false,
+
+    init: function (view) {
+        var me = this;
+
+        view.on('render', me.onViewRender, me, {
+            single: true
+        });
+    },
+
+    destroy: function () {
+        var me = this;
+
+        Ext.destroy(me.dragZone, me.dropZone);
+    },
+
+    enable: function () {
+        var me = this;
+
+        if (me.dragZone) {
+            me.dragZone.unlock();
+        }
+        if (me.dropZone) {
+            me.dropZone.unlock();
+        }
+        me.callParent();
+    },
+
+    disable: function () {
+        var me = this;
+
+        if (me.dragZone) {
+            me.dragZone.lock();
+        }
+        if (me.dropZone) {
+            me.dropZone.lock();
+        }
+        me.callParent();
+    },
+
+    onViewRender: function (view) {
+        var me = this,
+            scrollEl;
+
+        if (me.enableDrag) {
+            if (me.containerScroll) {
+                scrollEl = view.getEl();
+            }
+
+            me.dragZone = new Ext.view.DragZone({
+                view: view,
+                ddGroup: me.dragGroup || me.ddGroup,
+                dragText: me.dragText,
+                containerScroll: me.containerScroll,
+                scrollEl: scrollEl,
+                getDragData: function (e) {
+                    
+                    var view = this.view,
+                        item = e.getTarget(view.getItemSelector()),
+                        record = view.getRecord(item),
+                        task = me._getTaskFromRecord(e.target.id, view.getRecord(item)),
+                        cell = e.getTarget(view.getCellSelector()),
+                        dragEl, header;
+
+                    if (item) {
+                        dragEl = document.createElement('div');
+                        dragEl.className = 'x-form-text';
+                        dragEl.appendChild(document.createTextNode(cell.textContent || cell.innerText));
+
+                        header = view.getHeaderByCell(cell);
+                        return {
+                            event: new Ext.EventObjectImpl(e),
+                            ddel: dragEl,
+                            item: e.target,
+                            columnName: header.dataIndex,
+                            record: record,
+                            task: task
+                        };
+                    }
+                },
+
+                onInitDrag: function (x, y) {
+                    var self = this,
+                        data = self.dragData,
+                        view = self.view,
+                        selectionModel = view.getSelectionModel(),
+                        record = data.record,
+                        el = data.ddel;
+
+                    // Update the selection to match what would have been selected if the user had
+                    // done a full click on the target node rather than starting a drag from it.
+                    if (!selectionModel.isSelected(record)) {
+                        selectionModel.select(record, true);
+                    }
+
+                    Ext.fly(self.ddel).update(el.textContent || el.innerText);
+                    //self.proxy.update(self.ddel);
+                    self.onStartDrag(x, y);
+                    return true;
+                }
+            });
+        }
+
+        if (me.enableDrop) {
+            me.dropZone = new Ext.dd.DropZone(view.el, {
+                view: view,
+                ddGroup: me.dropGroup || me.ddGroup,
+                containerScroll: true,
+
+                getTargetFromEvent: function (e) {
+                    var self = this,
+                        view = self.view,
+                        cell = e.getTarget(view.cellSelector),
+                        row, header;
+
+                    // Ascertain whether the mousemove is within a grid cell.
+                    if (cell) {
+                        row = view.findItemByChild(cell);
+                        header = view.getHeaderByCell(cell);
+
+                        if (row && header) {
+                            return {
+                                node: cell,
+                                record: view.getRecord(row),
+                                columnName: header.dataIndex
+                            };
+                        }
+                    }
+                },
+
+                // On Node enter, see if it is valid for us to drop the field on that type of column.
+                onNodeEnter: function (target, dd, e, dragData) {
+                    var self = this,
+                        destRecordID = target.record.get('__WorkProduct').get('ObjectID'),
+                        sourceRecordID = dragData.record.get('__WorkProduct').get('ObjectID');
+
+                    delete self.dropOK;
+
+                    // Return if no target node or if over the same cell as the source of the drag.
+                    if (!target || target.node === dragData.item.parentNode) {
+                        return;
+                    }
+
+                    // Can only drop onto the same row
+                    if (destRecordID !== sourceRecordID) {
+
+                        self.dropOK = false;
+
+                        if (me.noDropCls) {
+                            Ext.fly(target.node).addCls(me.noDropCls);
+                        } else {
+                            Ext.fly(target.node).applyStyles({
+                                backgroundColor: me.noDropBackgroundColor
+                            });
+                        }
+
+                        return false;
+                    }
+
+                    self.dropOK = true;
+
+                    if (me.dropCls) {
+                        Ext.fly(target.node).addCls(me.dropCls);
+                    } else {
+                        Ext.fly(target.node).applyStyles({
+                            backgroundColor: me.dropBackgroundColor
+                        });
+                    }
+                },
+
+                // Return the class name to add to the drag proxy. This provides a visual indication
+                // of drop allowed or not allowed.
+                onNodeOver: function (target, dd, e, dragData) {
+                    return this.dropOK ? this.dropAllowed : this.dropNotAllowed;
+                },
+
+                // Highlight the target node.
+                onNodeOut: function (target, dd, e, dragData) {
+                    var cls = this.dropOK ? me.dropCls : me.noDropCls;
+
+                    if (cls) {
+                        Ext.fly(target.node).removeCls(cls);
+                    } else {
+                        Ext.fly(target.node).applyStyles({
+                            backgroundColor: ''
+                        });
+                    }
+                },
+
+                // Process the drop event if we have previously ascertained that a drop is OK.
+                onNodeDrop: function (target, dd, e, dragData) {
+                    if (this.dropOK) {
+                        
+                        var target_row = target.record;
+                        var target_column = target.columnName;
+                        
+                        var source_task = dragData.task;
+                        var source_column = dragData.columnName;
+                        
+                        if ( source_column == target_column ) {
+                            // since we're in the same row, nothing to do!
+                            return true;
+                        }
+                        
+                        target_row.changeTaskColumn(source_task, source_column, target_column);
+
+                        return true;
+                    }
+                },
+
+                onCellDrop: Ext.emptyFn
+            });
+        }
+    },
+    
+    _getTaskFromRecord: function(card_id, row) {
+        var task_id = card_id.replace(/T/,"");
+        var item = null;
+        Ext.Array.each(row.get('__Tasks'), function(task){
+            var oid = task.get('ObjectID');
+            if ( ""+oid == task_id ) {
+                item = task;
+            }
+        });
+        
+        Ext.Array.each(row.get('__Defect'), function(defect){
+            var oid = defect.get('ObjectID');
+            if ( ""+oid == task_id ) {
+                item = defect;
+            }
+        });
+        
+        return item;
+    }
+    
+});
+/**
  * Makes a combobox of fields where only the fields shared by all the provided models are shown
  * 
  */
@@ -522,6 +852,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     },
 
     initComponent: function () {
+        var me = this;
         this.callParent(arguments);
         
         this.addEvents(
@@ -539,7 +870,9 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 var columns = this._getColumns(task_values);
                 this._defineCustomModel(columns);
                 
-                var table_store = Ext.create('Rally.data.custom.Store',{ model: 'TSTableRow' });
+                var table_store = Ext.create('Rally.data.custom.Store',{
+                    model: 'TSTableRow'
+                });
                 
                 this.grid = this.add({ 
                     xtype:'rallygrid', 
@@ -550,6 +883,26 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                     sortableColumns: false,
                     disableSelection: true,
                     enableColumnMove: false,
+                    viewConfig: {
+                        listeners: {
+                            scope: this,
+                            itemupdate: function(row) {
+                                console.log('item update',row);
+                                var tasks = row.get('__Tasks') || [];
+                                var defects = row.get('__Defects') || [];
+                                
+                                var items = Ext.Array.push(tasks,defects);
+                                
+                                Ext.Array.each(items, function(record) {
+                                    var record_oid = record.get('ObjectID');
+                                    this._createTaskCard(record_oid,record);
+                                },this);
+                            }
+                        },
+                        plugins: {
+                            ptype: 'tscelldragdrop'
+                        }
+                    },
                     enableColumnHide: true /* doesn't do anything yet */
                 });
                 
@@ -652,6 +1005,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                     this.set('__Tasks',total_tasks);
                 },this);
             },
+            
             addDefects: function(defects) {
                 Ext.Array.each(defects, function(defect){
                     var state = defect.get(task_state_field);
@@ -667,11 +1021,37 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                     var total_defects = Ext.Array.merge( old_defects, [defect]);
                     this.set('__Defects',total_defects);
                 },this);
+            },
+            
+            changeTaskColumn: function(record, source_column, target_column) {
+                // remove from existing column list in row record
+                var old_column_items = this.get(source_column) || [];
+                var new_column_items = this.get(target_column) || [];
+                var record_data = record.getData();
+                
+                new_column_items.push(record_data);
+                this.set(target_column, new_column_items);
+                
+                this.set(source_column, 
+                    Ext.Array.filter(old_column_items, function(old_item) {
+                        return ( old_item.ObjectID != record_data.ObjectID );
+                    })
+                );
+                
+                this.setItemField(record, task_state_field, target_column);
+            },
+            
+            setItemField: function(record, field_name, value) {
+                console.log('set value:', field_name, value);
+                
+                record.set(field_name, value);
+                record.save();
             }
         });
     },
     
     _createTaskCard: function(record_oid, record){
+        var me = this;
         var tasks = Ext.query('#' + record_oid);
         
         if ( tasks.length === 0 ) {
@@ -681,8 +1061,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
 
             var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
                 record: record,
-                renderTo: card_element,
-                draggable: true
+                renderTo: card_element
             });
             
             card_element.on('click', function(evt,c) {
@@ -690,6 +1069,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             },this);
         }
     },
+    
     
     taskTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
@@ -815,6 +1195,8 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 align: 'center',
                 renderer: function(value) {
                     var html = [];
+                    console.log('renderer', state, value);
+                    
                     Ext.Array.each(value, function(item){
                         html.push(
                             Ext.String.format(
@@ -828,13 +1210,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                     return html.join('\n');
                 }
             });
-        });
-            
-        columns.push({ 
-            dataIndex: 'Done',
-            text: 'Done',
-            flex: 1,
-            align: 'center'
         });
         
         return columns;
@@ -858,6 +1233,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 var rows = this._getRowsFromWorkproducts(workproducts,tasks_by_workproduct,defects_by_workproduct);
 
                 table_store.loadRecords(rows);
+                
                 this.fireEvent('gridReady', this, this.grid);
                 deferred.resolve(rows);
             },
@@ -1083,16 +1459,9 @@ Ext.define('Rally.technicalservices.sprintboard.TaskCard',{
         
     },
     
-//     '<tpl if="this.hasColor(DisplayColor)">',
-//                "<div id='T{record.ObjectID}' class='ts_task_card {record._type} {[this.getBlockedClass(values.record.Blocked)]}' style='background-color:{record.DisplayColor};color:white;'>",
-//            '<tpl else>',
-//                "<div  id='T{record.ObjectID}'  class='ts_task_card {record_type} {[this.getBlockedClass(values.record.Blocked)]}' style='color:black;'>",
-//            '</tpl>',
-//        
-//            "{record.Name:ellipsis(15, true)}</div>",
     renderTpl: new Ext.XTemplate(
         '<tpl if="this.hasColor($comp.record.DisplayColor)">',
-            '<div class="ts_task_card {$comp.record._type} {[this.getBlockedClass(values.$comp.record.Blocked)]}" style="{[this.getStyle(values.$comp.record)]}">',
+            '<div id="T{$comp.record.ObjectID}" class="ts_task_card {$comp.record._type} {[this.getBlockedClass(values.$comp.record.Blocked)]}" style="{[this.getStyle(values.$comp.record)]}">',
                 '{$comp.record.Name:ellipsis(15, true)}',
             '</div>',
         '</tpl>',

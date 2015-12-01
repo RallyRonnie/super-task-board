@@ -40,6 +40,7 @@
     },
 
     initComponent: function () {
+        var me = this;
         this.callParent(arguments);
         
         this.addEvents(
@@ -57,7 +58,9 @@
                 var columns = this._getColumns(task_values);
                 this._defineCustomModel(columns);
                 
-                var table_store = Ext.create('Rally.data.custom.Store',{ model: 'TSTableRow' });
+                var table_store = Ext.create('Rally.data.custom.Store',{
+                    model: 'TSTableRow'
+                });
                 
                 this.grid = this.add({ 
                     xtype:'rallygrid', 
@@ -68,6 +71,26 @@
                     sortableColumns: false,
                     disableSelection: true,
                     enableColumnMove: false,
+                    viewConfig: {
+                        listeners: {
+                            scope: this,
+                            itemupdate: function(row) {
+                                console.log('item update',row);
+                                var tasks = row.get('__Tasks') || [];
+                                var defects = row.get('__Defects') || [];
+                                
+                                var items = Ext.Array.push(tasks,defects);
+                                
+                                Ext.Array.each(items, function(record) {
+                                    var record_oid = record.get('ObjectID');
+                                    this._createTaskCard(record_oid,record);
+                                },this);
+                            }
+                        },
+                        plugins: {
+                            ptype: 'tscelldragdrop'
+                        }
+                    },
                     enableColumnHide: true /* doesn't do anything yet */
                 });
                 
@@ -170,6 +193,7 @@
                     this.set('__Tasks',total_tasks);
                 },this);
             },
+            
             addDefects: function(defects) {
                 Ext.Array.each(defects, function(defect){
                     var state = defect.get(task_state_field);
@@ -185,11 +209,37 @@
                     var total_defects = Ext.Array.merge( old_defects, [defect]);
                     this.set('__Defects',total_defects);
                 },this);
+            },
+            
+            changeTaskColumn: function(record, source_column, target_column) {
+                // remove from existing column list in row record
+                var old_column_items = this.get(source_column) || [];
+                var new_column_items = this.get(target_column) || [];
+                var record_data = record.getData();
+                
+                new_column_items.push(record_data);
+                this.set(target_column, new_column_items);
+                
+                this.set(source_column, 
+                    Ext.Array.filter(old_column_items, function(old_item) {
+                        return ( old_item.ObjectID != record_data.ObjectID );
+                    })
+                );
+                
+                this.setItemField(record, task_state_field, target_column);
+            },
+            
+            setItemField: function(record, field_name, value) {
+                console.log('set value:', field_name, value);
+                
+                record.set(field_name, value);
+                record.save();
             }
         });
     },
     
     _createTaskCard: function(record_oid, record){
+        var me = this;
         var tasks = Ext.query('#' + record_oid);
         
         if ( tasks.length === 0 ) {
@@ -199,8 +249,7 @@
 
             var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
                 record: record,
-                renderTo: card_element,
-                draggable: true
+                renderTo: card_element
             });
             
             card_element.on('click', function(evt,c) {
@@ -208,6 +257,7 @@
             },this);
         }
     },
+    
     
     taskTemplate: new Ext.XTemplate(
         "<tpl for='.'>",
@@ -333,6 +383,8 @@
                 align: 'center',
                 renderer: function(value) {
                     var html = [];
+                    console.log('renderer', state, value);
+                    
                     Ext.Array.each(value, function(item){
                         html.push(
                             Ext.String.format(
@@ -346,13 +398,6 @@
                     return html.join('\n');
                 }
             });
-        });
-            
-        columns.push({ 
-            dataIndex: 'Done',
-            text: 'Done',
-            flex: 1,
-            align: 'center'
         });
         
         return columns;
@@ -376,6 +421,7 @@
                 var rows = this._getRowsFromWorkproducts(workproducts,tasks_by_workproduct,defects_by_workproduct);
 
                 table_store.loadRecords(rows);
+                
                 this.fireEvent('gridReady', this, this.grid);
                 deferred.resolve(rows);
             },
