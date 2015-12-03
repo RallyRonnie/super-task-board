@@ -49,30 +49,29 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _addFields: function() {
         var display_fields = [ 
-            { text: 'Name', dataIndex: 'Name' },
-            { text: 'Owner', dataIndex: 'Owner', renderer: function(value) {
-                if ( !value ) { return ''; }
-                return value._refObjectName;
-            } }
+            { text: 'Name', dataIndex: 'Name', editor: { xtype:'rallytextfield' } },
+            { text: 'Owner', dataIndex: 'Owner', editor: {
+                    xtype: 'rallyusersearchcombobox'
+                }
+            }
         ];
         
         if ( this.record.get('_type') == 'task' ) {
             Ext.Array.push(display_fields, [
-                { text: 'Estimate', dataIndex: 'Estimate'},
-                { text: 'To Do', dataIndex: 'ToDo'}
+                { text: 'Estimate', dataIndex: 'Estimate', editor: { xtype: 'rallynumberfield', minValue: 0 } },
+                { text: 'To Do', dataIndex: 'ToDo', editor: { xtype: 'rallynumberfield', minValue: 0}}
             ]);
         } else {
-            display_fields.push({ text: 'Story Points', dataIndex: 'PlanEstimate'});
+            display_fields.push({ text: 'Story Points', dataIndex: 'PlanEstimate', editor: { xtype: 'rallynumberfield', minValue: 0}});
         }
         
         display_fields = Ext.Array.push(display_fields, [
-            { text: 'Blocked', dataIndex: 'Blocked', renderer: function(value) {
-                if ( value !== true ) {
-                    return "No";
-                }
-                return "Yes";
+            { text: 'Blocked', dataIndex: 'Blocked', editor: {
+                xtype: 'rallyfieldvaluecombobox',
+                model: this.record.get('_type'),
+                field: 'Blocked'
             }},
-            { text: 'Blocked Reason', dataIndex: 'BlockedReason'}, 
+            { text: 'Blocked Reason', dataIndex: 'BlockedReason', editor: { xtype:'rallytextfield' }}, 
             { text: 'Color', dataIndex: 'DisplayColor', renderer: function(value) {
                 if ( Ext.isEmpty(value) ) {
                     return '';
@@ -110,16 +109,45 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         if ( field_def.renderer ) {
             value = field_def.renderer.call(this, value,null,record);
         }
-        container.add({
+        
+        var edit_configure = {
             xtype:'container',
-            html: value,
             flex: 1,
             cls: 'ts-editor-field-contents',
             padding: 5,
             margin: 2
-        });
+        };
+        
+        if ( field_def.editor ) {
+            edit_configure.items = [Ext.apply({ 
+                value: value,
+                project: record.get('Project')._ref,
+                listeners: {
+                    scope: this,
+                    blur: function(editor) { 
+                        this._changeAndSave(editor,field_def);
+                    }
+                }
+            }, field_def.editor)];
+        } else {
+            console.log('--', this.record, value);
+            edit_configure.html = value;
+        }
+        
+        container.add(edit_configure);
         
         this.add( container );
+    },
+    
+    _changeAndSave: function(editor, field_def) {
+        var record = this.record;
+        
+        var field_name = field_def.dataIndex;
+        if ( !Ext.isEmpty(field_name) ) {
+            console.log( "changed:", editor.getValue(), field_def.dataIndex);
+            record.set(field_def.dataIndex, editor.getValue());
+            record.save();
+        }
     }
     
 });

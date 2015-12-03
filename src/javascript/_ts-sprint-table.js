@@ -495,7 +495,7 @@
             context: { projectScopeDown: false, projectScopeUp: false },
             sorters: [{property:'TaskIndex',direction:'ASC'}],
             filters: iteration_filter,
-            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor',
+            fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor','Description',
                 'Project',this.taskStateField, 'Owner', 'Blocked', 'BlockedReason',
                 'Estimate','ToDo','WorkProduct']
         });

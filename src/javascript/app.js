@@ -72,8 +72,6 @@ Ext.define("TSSuperCardboard", {
                 }
             }
         });
-            
-            
     },
     
     getOptions: function() {
