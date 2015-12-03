@@ -49,7 +49,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _addFields: function() {
         var display_fields = [ 
-            { text: 'Name', dataIndex: 'Name', editor: { xtype:'rallytextfield' } },
+            { text: 'Name', dataIndex: 'Name', editor: { xtype:'rallytextfield', height: 25 } },
             { text: 'Owner', dataIndex: 'Owner', editor: {
                     xtype: 'rallyusersearchcombobox'
                 }
@@ -71,7 +71,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 model: this.record.get('_type'),
                 field: 'Blocked'
             }},
-            { text: 'Blocked Reason', dataIndex: 'BlockedReason', editor: { xtype:'rallytextfield' }}, 
+            { text: 'Blocked Reason', dataIndex: 'BlockedReason', editor: { xtype:'rallytextfield', height: 25 }}, 
             { text: 'Color', dataIndex: 'DisplayColor', renderer: function(value) {
                 if ( Ext.isEmpty(value) ) {
                     return '';
@@ -112,15 +112,15 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         
         var edit_configure = {
             xtype:'container',
-            flex: 1,
             cls: 'ts-editor-field-contents',
-            padding: 5,
+            padding: 3,
             margin: 2
         };
         
         if ( field_def.editor ) {
             edit_configure.items = [Ext.apply({ 
                 value: value,
+                width: 300,
                 project: record.get('Project')._ref,
                 listeners: {
                     scope: this,
