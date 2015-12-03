@@ -126,6 +126,8 @@
                     success: function(rows) {
                         this._addTaskCards(rows);
                         this._setWorkItemCardListeners(rows);
+                        this._setWorkItemAdderListeners(rows,'task');
+                        this._setWorkItemAdderListeners(rows,'defect');
                     }
                 });
             },
@@ -272,33 +274,8 @@
         }
     },
     
-    
-    taskTemplate: new Ext.XTemplate(
-        "<tpl for='.'>",
-            '<tpl if="this.hasColor(DisplayColor)">',
-                "<div id='{ObjectID}' class='ts_task_card {_type} {[this.getBlockedClass(values.Blocked)]}' style='background-color:{DisplayColor};color:white;'>",
-            '<tpl else>',
-                "<div  id='{ObjectID}'  class='ts_task_card {_type} {[this.getBlockedClass(values.Blocked)]}' style='color:black;'>",
-            '</tpl>',
-        
-            "{Name:ellipsis(15, true)}</div>",
-        "</tpl>",
-        {
-            hasColor: function(color){
-               return !Ext.isEmpty(color);
-            },
-            
-            getBlockedClass: function(blocked) {
-                if ( blocked !== true ) {
-                    return "";
-                }
-                return "blocked";
-            }
-        }
-    ),
-    
     workproductTemplate: new Ext.XTemplate(
-        "<tpl for='.'>",
+        "<tpl>",
             '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard {[this.getBlockedClass(values.Blocked)]}">',
                 '<div class="artifact-color"></div>',
                 '<div class="card-table-ct {_type}" id="{ObjectID}" type={_type}">',
@@ -341,7 +318,11 @@
                             
                         '<tr/>',
                     '</table>',
-               '</div>',
+                '</div>',
+            '</div>',
+            '<div class="actions">',
+                '+<span id="add_task_to_{ObjectID}" class="icon-task add-task"> </span>',
+                '+<span id="add_defect_to_{ObjectID}" class="icon-defect add-defect"> </span>',
             '</div>',
         "</tpl>",
         {
@@ -385,7 +366,7 @@
             flex: 1,
             align: 'center',
             renderer: function(value) {
-                return me.workproductTemplate.apply([value.getData()]);
+                return me.workproductTemplate.apply(value.getData());
             }
         }];
         
@@ -407,7 +388,6 @@
                         );
                     });
                     
-                    //return me.taskTemplate.apply(value);
                     return html.join('\n');
                 }
             });
@@ -600,6 +580,57 @@
                 this._createTaskCard(record_oid,record);
             },this);
         },this);
+    },
+    
+    _setWorkItemAdderListeners: function(rows, target_type) {
+        Ext.Array.each(rows, function(row){
+            var record = row.get('__WorkProduct');
+            var record_oid = record.get('ObjectID');
+            
+            var icon_query = Ext.String.format('#add_{0}_to_{1}', target_type, record_oid);
+            var add_task_icon = Ext.query(icon_query);
+            
+            if ( add_task_icon.length === 0 ) {
+                console.log('Cannot find adder for work item', record_oid);
+            } else {
+                var adder_element = Ext.get(add_task_icon[0]);
+                adder_element.on('click', function(evt,c) {
+                    this._createNewFor(target_type, record, row);
+                },this);
+            }
+        },this);
+    },
+    
+    _createNewFor: function(target_type, parent_record, row) {
+        Rally.data.ModelFactory.getModel({
+            type: target_type,
+            success: function(model) {
+                var parent_ref = parent_record.get('_ref');
+                
+                var config = { 
+                    Name: 'New Item',
+                    WorkProduct: { _ref: parent_ref } 
+                };
+                
+                if ( target_type == "defect" ) {
+                    delete config.WorkProduct;
+                    config.Requirement = { _ref: parent_ref }
+                }
+                
+                var item = Ext.create(model, config);
+                item.save({
+                    callback: function(record,operation) {
+                        if ( target_type == "task" ) {
+                            row.addTasks([record]);
+                        } else {
+                            row.addDefects([record]);
+                        }
+                    },
+                    scope: this
+                });
+                
+            }
+        });
     },
     
     _setWorkItemCardListeners: function(rows) {

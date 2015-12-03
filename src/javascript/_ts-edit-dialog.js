@@ -130,7 +130,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 }
             }, field_def.editor)];
         } else {
-            console.log('--', this.record, value);
             edit_configure.html = value;
         }
         
@@ -144,7 +143,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         
         var field_name = field_def.dataIndex;
         if ( !Ext.isEmpty(field_name) ) {
-            console.log( "changed:", editor.getValue(), field_def.dataIndex);
             record.set(field_def.dataIndex, editor.getValue());
             record.save();
         }

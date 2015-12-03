@@ -1,8 +1,16 @@
 div.ts_workproduct_card {
-    margin: 5px;
     padding: 2px;
     text-align: center;
     font-size: 12px;
+}
+
+.rui-card { 
+    margin: 10px 5px 5px 5px;
+}
+
+div.actions {
+    color: #337ec6;
+    text-align: right;
 }
 
 td {
