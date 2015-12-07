@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sun Dec 06 2015 17:31:56 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Dec 06 2015 17:38:02 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Dec 06 2015 17:31:56 GMT-0800 (PST)";
-        var CHECKSUM = 75415410172;
+        var APP_BUILD_DATE = "Sun Dec 06 2015 17:38:02 GMT-0800 (PST)";
+        var CHECKSUM = 75254216528;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -306,9 +306,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 
                 return "<div style='width:20px;height:20px;background-color:" + value + "'></div>";
             }}, 
-            { text: 'Description', dataIndex: 'Description', renderer: function(value) {
-                return "<div style='overflow:auto;height:150px;'>" + value + "</div>";
-            } }
+            { text: 'Description', dataIndex: 'Description', editor: { xtype: 'rallyrichtexteditor', height: 150 } }
         ]);
         
         Ext.Array.each(display_fields, function(field) {

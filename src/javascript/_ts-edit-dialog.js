@@ -84,9 +84,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 
                 return "<div style='width:20px;height:20px;background-color:" + value + "'></div>";
             }}, 
-            { text: 'Description', dataIndex: 'Description', renderer: function(value) {
-                return "<div style='overflow:auto;height:150px;'>" + value + "</div>";
-            } }
+            { text: 'Description', dataIndex: 'Description', editor: { xtype: 'rallyrichtexteditor', height: 150 } }
         ]);
         
         Ext.Array.each(display_fields, function(field) {
