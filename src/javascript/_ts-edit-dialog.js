@@ -6,11 +6,16 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     config: {
         /**
-         * @cfg record {Rally.data.Model}
+         * @cfg {Rally.data.Model} record
          * The record that we're editing.
          */
         record: null,
-        
+        /**
+         * 
+         * @cfg {Rally.data.Model} row 
+         * The record for the work item row that the item belongs to
+         */
+        row: null,
         autoShow : true,
         closable : true
     },
@@ -140,11 +145,13 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _changeAndSave: function(editor, field_def) {
         var record = this.record;
+        var row = this.row;
         
         var field_name = field_def.dataIndex;
         if ( !Ext.isEmpty(field_name) ) {
             record.set(field_def.dataIndex, editor.getValue());
             record.save();
+            row.updateExistingRecord(record);
         }
     }
     

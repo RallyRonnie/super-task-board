@@ -91,7 +91,7 @@
                                 
                                 Ext.Array.each(items, function(record) {
                                     var record_oid = record.ObjectID || record.get('ObjectID');
-                                    this._createTaskCard(record_oid,record);
+                                    this._createTaskCard(record_oid,record,row);
                                 },this);
                                 this._setWorkItemListeners([row]);
                             }
@@ -189,6 +189,7 @@
         
         fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
         fields.push({ name: '__Defects', type: 'object', defaultValue: []});
+        fields.push({ name: '_version', type: 'number', defaultValue: 0});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -212,6 +213,7 @@
             },
             
             addDefects: function(defects) {
+                
                 Ext.Array.each(defects, function(defect){
                     var state = defect.get(task_state_field);
                     if ( Ext.isEmpty(this.get(state)) ) {
@@ -246,6 +248,18 @@
                 this.setItemField(record, task_state_field, target_column);
             },
             
+            // given a task, defect or workproduct that is already known by 
+            // this row, replace it with an updated version
+            updateExistingRecord: function(record) {
+                console.log('updateExistingRecord', record.get('_type'));
+                var type = record.get('_type');
+                var version = this.get('_version') || 0;
+                version++;
+                
+                // just need to change another field to signal the store for listeners
+                this.set('_version', version);
+            },
+            
             setItemField: function(record, field_name, value) {
                 record.set(field_name, value);
                 
@@ -260,7 +274,7 @@
         });
     },
     
-    _createTaskCard: function(record_oid, record){
+    _createTaskCard: function(record_oid, record,row){
         
         var me = this;
         var tasks = Ext.query('#' + record_oid);
@@ -276,7 +290,7 @@
             });
             
             card_element.on('click', function(evt,c) {
-                this._showQuickView(record);
+                this._showQuickView(record,row);
             },this);
         }
     },
@@ -584,7 +598,7 @@
             
             Ext.Array.each(items, function(record) {
                 var record_oid = record.get('ObjectID');
-                this._createTaskCard(record_oid,record);
+                this._createTaskCard(record_oid,record,row);
             },this);
         },this);
     },
@@ -651,16 +665,17 @@
             } else {
                 var card_element = Ext.get(cards[0]);
                 card_element.on('click', function(evt,c) {
-                    this._showQuickView(record);
+                    this._showQuickView(record,row);
                 },this);
             }
         },this);
     },
     
-    _showQuickView: function(record) {
+    _showQuickView: function(record,row) {
         var me = this;
         Ext.create('Rally.technicalservices.artifact.EditDialog', {
-            record: record
+            record: record,
+            row: row
         }).show();
     }
     

@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sun Dec 06 2015 16:25:28 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Dec 06 2015 16:58:01 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Dec 06 2015 16:25:28 GMT-0800 (PST)";
-        var CHECKSUM = 70971036708;
+        var APP_BUILD_DATE = "Sun Dec 06 2015 16:58:01 GMT-0800 (PST)";
+        var CHECKSUM = 73130363895;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -228,11 +228,16 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     config: {
         /**
-         * @cfg record {Rally.data.Model}
+         * @cfg {Rally.data.Model} record
          * The record that we're editing.
          */
         record: null,
-        
+        /**
+         * 
+         * @cfg {Rally.data.Model} row 
+         * The record for the work item row that the item belongs to
+         */
+        row: null,
         autoShow : true,
         closable : true
     },
@@ -362,11 +367,13 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _changeAndSave: function(editor, field_def) {
         var record = this.record;
+        var row = this.row;
         
         var field_name = field_def.dataIndex;
         if ( !Ext.isEmpty(field_name) ) {
             record.set(field_def.dataIndex, editor.getValue());
             record.save();
+            row.updateExistingRecord(record);
         }
     }
     
@@ -929,7 +936,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                                 
                                 Ext.Array.each(items, function(record) {
                                     var record_oid = record.ObjectID || record.get('ObjectID');
-                                    this._createTaskCard(record_oid,record);
+                                    this._createTaskCard(record_oid,record,row);
                                 },this);
                                 this._setWorkItemListeners([row]);
                             }
@@ -1027,6 +1034,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         
         fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
         fields.push({ name: '__Defects', type: 'object', defaultValue: []});
+        fields.push({ name: '_version', type: 'number', defaultValue: 0});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -1050,6 +1058,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             },
             
             addDefects: function(defects) {
+                
                 Ext.Array.each(defects, function(defect){
                     var state = defect.get(task_state_field);
                     if ( Ext.isEmpty(this.get(state)) ) {
@@ -1084,6 +1093,18 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 this.setItemField(record, task_state_field, target_column);
             },
             
+            // given a task, defect or workproduct that is already known by 
+            // this row, replace it with an updated version
+            updateExistingRecord: function(record) {
+                console.log('updateExistingRecord', record.get('_type'));
+                var type = record.get('_type');
+                var version = this.get('_version') || 0;
+                version++;
+                
+                // just need to change another field to signal the store for listeners
+                this.set('_version', version);
+            },
+            
             setItemField: function(record, field_name, value) {
                 record.set(field_name, value);
                 
@@ -1098,7 +1119,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         });
     },
     
-    _createTaskCard: function(record_oid, record){
+    _createTaskCard: function(record_oid, record,row){
         
         var me = this;
         var tasks = Ext.query('#' + record_oid);
@@ -1114,7 +1135,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             });
             
             card_element.on('click', function(evt,c) {
-                this._showQuickView(record);
+                this._showQuickView(record,row);
             },this);
         }
     },
@@ -1422,7 +1443,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             
             Ext.Array.each(items, function(record) {
                 var record_oid = record.get('ObjectID');
-                this._createTaskCard(record_oid,record);
+                this._createTaskCard(record_oid,record,row);
             },this);
         },this);
     },
@@ -1489,16 +1510,17 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             } else {
                 var card_element = Ext.get(cards[0]);
                 card_element.on('click', function(evt,c) {
-                    this._showQuickView(record);
+                    this._showQuickView(record,row);
                 },this);
             }
         },this);
     },
     
-    _showQuickView: function(record) {
+    _showQuickView: function(record,row) {
         var me = this;
         Ext.create('Rally.technicalservices.artifact.EditDialog', {
-            record: record
+            record: record,
+            row: row
         }).show();
     }
     
