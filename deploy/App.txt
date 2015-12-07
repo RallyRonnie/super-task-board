@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sun Dec 06 2015 17:38:02 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Dec 06 2015 18:26:41 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Dec 06 2015 17:38:02 GMT-0800 (PST)";
-        var CHECKSUM = 75254216528;
+        var APP_BUILD_DATE = "Sun Dec 06 2015 18:26:41 GMT-0800 (PST)";
+        var CHECKSUM = 78200541846;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -262,9 +262,41 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     },
 
     initComponent: function() {
+        var me = this;
         this.callParent(arguments);
         
         this._addFields();
+        
+        this.on('render', function(dialog) {
+            var pickers = Ext.query('#color-block');
+            
+            if ( pickers.length === 0 ) {
+                console.log('Cannot find square with id color-block');
+            } else {
+                var target = Ext.get(pickers[0]);
+                
+                target.on('click', function(evt,c) {
+                        console.log('target', target);
+                    Rally.ui.popover.PopoverFactory.bake({
+                        target: target,
+                        field: 'Color',
+                        record: me.record,
+                       
+                        _onColorClick: function(e) {
+                            var el = Ext.get(Ext.isIE ? e.target : e.currentTarget);
+                            el.addCls('selected');
+                
+                            var selectedColor = el.hasCls('clear-color') ? null : el.getColor('background-color');
+                            target.setStyle('background-color',selectedColor);
+                            me.record.set('DisplayColor', selectedColor);
+                            
+                            me.row.updateExistingRecord(me.record);
+                            this.destroy();
+                        }
+                    });
+                },this);
+            }
+        });
     },
     
     _getTitle: function(record) {
@@ -301,10 +333,10 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             { text: 'Blocked Reason', dataIndex: 'BlockedReason', editor: { xtype:'rallytextfield', height: 25 }}, 
             { text: 'Color', dataIndex: 'DisplayColor', renderer: function(value) {
                 if ( Ext.isEmpty(value) ) {
-                    return '';
+                    return "<div id='color-block' style='width:20px;height:20px;border:1px solid black'></div>";
                 }
                 
-                return "<div style='width:20px;height:20px;background-color:" + value + "'></div>";
+                return "<div  id='color-block' style='width:20px;height:20px;background-color:" + value + "'></div>";
             }}, 
             { text: 'Description', dataIndex: 'Description', editor: { xtype: 'rallyrichtexteditor', height: 150 } }
         ]);
