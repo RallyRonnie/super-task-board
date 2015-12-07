@@ -45,7 +45,6 @@ Ext.define("TSSuperCardboard", {
     },
     
     updateData: function()  { 
-        this.logger.log("Selected: ", this.iteration);
         var me = this;
         
         if ( this.down('tssprinttable') ) { this.down('tssprinttable').destroy(); }

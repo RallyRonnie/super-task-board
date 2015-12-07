@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Wed Dec 02 2015 20:03:01 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Dec 06 2015 16:25:28 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Dec 02 2015 20:03:01 GMT-0800 (PST)";
-        var CHECKSUM = 70636679930;
+        var APP_BUILD_DATE = "Sun Dec 06 2015 16:25:28 GMT-0800 (PST)";
+        var CHECKSUM = 70971036708;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -920,6 +920,8 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
+                                console.log('item update');
+                                
                                 var tasks = row.get('__Tasks') || [];
                                 var defects = row.get('__Defects') || [];
                                 
@@ -929,6 +931,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                                     var record_oid = record.ObjectID || record.get('ObjectID');
                                     this._createTaskCard(record_oid,record);
                                 },this);
+                                this._setWorkItemListeners([row]);
                             }
                         },
                         plugins: {
@@ -963,9 +966,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                     scope: this,
                     success: function(rows) {
                         this._addTaskCards(rows);
-                        this._setWorkItemCardListeners(rows);
-                        this._setWorkItemAdderListeners(rows,'task');
-                        this._setWorkItemAdderListeners(rows,'defect');
+                        this._setWorkItemListeners(rows);
                     }
                 });
             },
@@ -974,6 +975,12 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             }
         });
         
+    },
+    
+    _setWorkItemListeners: function(rows) {
+        this._setWorkItemCardListeners(rows);
+        this._setWorkItemAdderListeners(rows,'task');
+        this._setWorkItemAdderListeners(rows,'defect');
     },
 
     _loadWorkItems: function(artifact_type) {
@@ -1810,7 +1817,6 @@ Ext.define("TSSuperCardboard", {
     },
     
     updateData: function()  { 
-        this.logger.log("Selected: ", this.iteration);
         var me = this;
         
         if ( this.down('tssprinttable') ) { this.down('tssprinttable').destroy(); }

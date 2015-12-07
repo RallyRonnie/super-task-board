@@ -82,6 +82,8 @@
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
+                                console.log('item update');
+                                
                                 var tasks = row.get('__Tasks') || [];
                                 var defects = row.get('__Defects') || [];
                                 
@@ -91,6 +93,7 @@
                                     var record_oid = record.ObjectID || record.get('ObjectID');
                                     this._createTaskCard(record_oid,record);
                                 },this);
+                                this._setWorkItemListeners([row]);
                             }
                         },
                         plugins: {
@@ -125,9 +128,7 @@
                     scope: this,
                     success: function(rows) {
                         this._addTaskCards(rows);
-                        this._setWorkItemCardListeners(rows);
-                        this._setWorkItemAdderListeners(rows,'task');
-                        this._setWorkItemAdderListeners(rows,'defect');
+                        this._setWorkItemListeners(rows);
                     }
                 });
             },
@@ -136,6 +137,12 @@
             }
         });
         
+    },
+    
+    _setWorkItemListeners: function(rows) {
+        this._setWorkItemCardListeners(rows);
+        this._setWorkItemAdderListeners(rows,'task');
+        this._setWorkItemAdderListeners(rows,'defect');
     },
 
     _loadWorkItems: function(artifact_type) {
