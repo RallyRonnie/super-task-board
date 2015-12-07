@@ -82,8 +82,7 @@
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
-                                console.log('item update');
-                                
+                                console.log('row updated');
                                 var tasks = row.get('__Tasks') || [];
                                 var defects = row.get('__Defects') || [];
                                 
@@ -251,8 +250,7 @@
             // given a task, defect or workproduct that is already known by 
             // this row, replace it with an updated version
             updateExistingRecord: function(record) {
-                console.log('updateExistingRecord', record.get('_type'));
-                var type = record.get('_type');
+                //var type = record.get('_type');
                 var version = this.get('_version') || 0;
                 version++;
                 
@@ -284,8 +282,12 @@
         } else {
             var card_element = Ext.get(tasks[0]);
 
+            if ( this.down('#Child' + record_oid) ) {
+                this.down('#Child' + record_oid).destroy();
+            }
             var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
                 record: record,
+                itemId: 'Child' + record_oid,
                 renderTo: card_element
             });
             
@@ -623,6 +625,7 @@
     },
     
     _createNewFor: function(target_type, parent_record, row) {
+        console.log('create new ', target_type);
         Rally.data.ModelFactory.getModel({
             type: target_type,
             success: function(model) {

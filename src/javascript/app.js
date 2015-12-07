@@ -27,6 +27,31 @@ Ext.define("TSSuperCardboard", {
     _addSelectors: function() {
         var container = this.down('#selector_box');
         container.add({
+            xtype: 'rallyaddnew',
+            ignoredRequiredFields: ['Name', 'Project', 'ScheduleState','State'],
+            recordTypes: ['User Story','Defect'],
+            listeners: {
+                scope: this,
+                create: function( button, created_record){
+                    this.logger.log("Created new item:", created_record);
+                    var me = this;
+                    var iteration = this.iteration || this.down('rallyiterationcombobox').getRecord();
+                    
+                    if ( iteration ) {
+                        created_record.set('Iteration', { _ref: iteration.get('_ref') } );
+                        created_record.save({
+                            callback: function(result, operation) {
+                                if(operation.wasSuccessful()) {
+                                    me.updateData();
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        
+        container.add({
             itemId:'spacer',
             xtype: 'container',
             flex: 1

@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sun Dec 06 2015 16:58:01 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Dec 06 2015 17:31:56 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Dec 06 2015 16:58:01 GMT-0800 (PST)";
-        var CHECKSUM = 73130363895;
+        var APP_BUILD_DATE = "Sun Dec 06 2015 17:31:56 GMT-0800 (PST)";
+        var CHECKSUM = 75415410172;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -927,8 +927,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
-                                console.log('item update');
-                                
+                                console.log('row updated');
                                 var tasks = row.get('__Tasks') || [];
                                 var defects = row.get('__Defects') || [];
                                 
@@ -1096,8 +1095,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             // given a task, defect or workproduct that is already known by 
             // this row, replace it with an updated version
             updateExistingRecord: function(record) {
-                console.log('updateExistingRecord', record.get('_type'));
-                var type = record.get('_type');
+                //var type = record.get('_type');
                 var version = this.get('_version') || 0;
                 version++;
                 
@@ -1129,8 +1127,12 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         } else {
             var card_element = Ext.get(tasks[0]);
 
+            if ( this.down('#Child' + record_oid) ) {
+                this.down('#Child' + record_oid).destroy();
+            }
             var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
                 record: record,
+                itemId: 'Child' + record_oid,
                 renderTo: card_element
             });
             
@@ -1468,6 +1470,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     },
     
     _createNewFor: function(target_type, parent_record, row) {
+        console.log('create new ', target_type);
         Rally.data.ModelFactory.getModel({
             type: target_type,
             success: function(model) {
@@ -1820,6 +1823,31 @@ Ext.define("TSSuperCardboard", {
     
     _addSelectors: function() {
         var container = this.down('#selector_box');
+        container.add({
+            xtype: 'rallyaddnew',
+            ignoredRequiredFields: ['Name', 'Project', 'ScheduleState','State'],
+            recordTypes: ['User Story','Defect'],
+            listeners: {
+                scope: this,
+                create: function( button, created_record){
+                    this.logger.log("Created new item:", created_record);
+                    var me = this;
+                    var iteration = this.iteration || this.down('rallyiterationcombobox').getRecord();
+                    
+                    if ( iteration ) {
+                        created_record.set('Iteration', { _ref: iteration.get('_ref') } );
+                        created_record.save({
+                            callback: function(result, operation) {
+                                if(operation.wasSuccessful()) {
+                                    me.updateData();
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        
         container.add({
             itemId:'spacer',
             xtype: 'container',
