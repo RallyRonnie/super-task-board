@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sat Dec 12 2015 14:31:03 GMT-0800 (PST) -->
+    <!--  Build Date: Sat Dec 12 2015 15:03:51 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sat Dec 12 2015 14:31:03 GMT-0800 (PST)";
-        var CHECKSUM = 78200532061;
+        var APP_BUILD_DATE = "Sat Dec 12 2015 15:03:51 GMT-0800 (PST)";
+        var CHECKSUM = 79281033548;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -941,7 +941,8 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 this._defineCustomModel(columns);
                 
                 var table_store = Ext.create('Rally.data.custom.Store',{
-                    model: 'TSTableRow'
+                    model: 'TSTableRow',
+                    sorters: [{property:'DragAndDropRank', direction:'ASC'}]
                 });
                 
                 this.grid = this.add({ 
@@ -1033,7 +1034,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
-                'Blocked','Owner','BlockedReason','Description']
+                'Blocked','Owner','BlockedReason','Description','DragAndDropRank']
         });
                 
         store.load({
@@ -1061,9 +1062,10 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             return { name: name, type: type };
         });
         
-        fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
-        fields.push({ name: '__Defects', type: 'object', defaultValue: []});
-        fields.push({ name: '_version', type: 'number', defaultValue: 0});
+        fields.push({name: '__Tasks',         type: 'object', defaultValue: []});
+        fields.push({name: '__Defects',       type: 'object', defaultValue: []});
+        fields.push({name: '_version',        type: 'number', defaultValue: 0});
+        fields.push({name: 'DragAndDropRank', type: 'string', defaultValue: 'x'});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -1297,7 +1299,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     _updateRows: function(workproducts, table_store) {
         var deferred = Ext.create('Deft.Deferred');
         var me = this;
-
         
         Deft.Chain.sequence([
             function() { return me._loadTasks(workproducts); },
@@ -1405,8 +1406,14 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         var rows = [];
         var me = this;
         
-        Ext.Array.each( workproducts, function(workproduct){
+        // sort because the custom store doesn't seem to do it
+        var sorted_workproducts = Ext.Array.sort(workproducts, function(a,b){
+            return a.get('DragAndDropRank') > b.get('DragAndDropRank');
+        });
+        
+        Ext.Array.each( sorted_workproducts, function(workproduct){
             var row = Ext.create('TSTableRow',{
+                DragAndDropRank: workproduct.get('DragAndDropRank'),
                 __WorkProduct: workproduct,
                 __Tasks: [],
                 __Defects: []
@@ -1841,9 +1848,11 @@ Ext.define("TSSuperCardboard", {
         }
     },
     
+    layout: { type: 'border' },
+    
     items: [
-        {xtype:'container', itemId:'selector_box', layout: { type:'hbox' }, minHeight: 25},
-        {xtype:'container', itemId:'display_box'}
+        {xtype:'container', itemId:'selector_box', region: 'north',  layout: { type:'hbox' }, minHeight: 25},
+        {xtype:'container', itemId:'display_box' , region: 'center', layout: { type: 'border'} }
     ],
     
     launch: function() {
@@ -1903,8 +1912,6 @@ Ext.define("TSSuperCardboard", {
         
         this.setLoading('Fetching items in iteration ' + this.iteration.get('Name'));
         
-        // columns: "{"":{"stateMapping":"Defined"},"Project Management":{"stateMapping":"Defined"},"QA Testing":{"stateMapping":"In-Progress"},"Software Development":{"stateMapping":""},"Planning (Non-Cap)":{"stateMapping":""},"Default (Non-Cap)":{"stateMapping":""}}"
-    
         var columnSettings = null;
         if ( !Ext.isEmpty(this.getSetting('columns') ) ){
             columnSettings = this.getSetting('columns');
@@ -1917,6 +1924,8 @@ Ext.define("TSSuperCardboard", {
             iteration: this.iteration,
             taskStateField: this.getSetting('taskStateField'),
             columnSettings: columnSettings,
+            region: 'center',
+            layout: 'fit',
             listeners: {
                 gridReady: function() {
                     me.setLoading(false);
@@ -2049,6 +2058,10 @@ div.ts_workproduct_card {
 
 .rui-card { 
     margin: 10px 5px 5px 5px;
+}
+
+.x-border-layout-ct {
+    background-color: #fff;
 }
 
 div.actions {

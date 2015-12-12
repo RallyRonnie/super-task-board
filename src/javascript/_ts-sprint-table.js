@@ -66,7 +66,8 @@
                 this._defineCustomModel(columns);
                 
                 var table_store = Ext.create('Rally.data.custom.Store',{
-                    model: 'TSTableRow'
+                    model: 'TSTableRow',
+                    sorters: [{property:'DragAndDropRank', direction:'ASC'}]
                 });
                 
                 this.grid = this.add({ 
@@ -158,7 +159,7 @@
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
-                'Blocked','Owner','BlockedReason','Description']
+                'Blocked','Owner','BlockedReason','Description','DragAndDropRank']
         });
                 
         store.load({
@@ -186,9 +187,10 @@
             return { name: name, type: type };
         });
         
-        fields.push({ name: '__Tasks', type: 'object', defaultValue: []});
-        fields.push({ name: '__Defects', type: 'object', defaultValue: []});
-        fields.push({ name: '_version', type: 'number', defaultValue: 0});
+        fields.push({name: '__Tasks',         type: 'object', defaultValue: []});
+        fields.push({name: '__Defects',       type: 'object', defaultValue: []});
+        fields.push({name: '_version',        type: 'number', defaultValue: 0});
+        fields.push({name: 'DragAndDropRank', type: 'string', defaultValue: 'x'});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -422,7 +424,6 @@
     _updateRows: function(workproducts, table_store) {
         var deferred = Ext.create('Deft.Deferred');
         var me = this;
-
         
         Deft.Chain.sequence([
             function() { return me._loadTasks(workproducts); },
@@ -530,8 +531,14 @@
         var rows = [];
         var me = this;
         
-        Ext.Array.each( workproducts, function(workproduct){
+        // sort because the custom store doesn't seem to do it
+        var sorted_workproducts = Ext.Array.sort(workproducts, function(a,b){
+            return a.get('DragAndDropRank') > b.get('DragAndDropRank');
+        });
+        
+        Ext.Array.each( sorted_workproducts, function(workproduct){
             var row = Ext.create('TSTableRow',{
+                DragAndDropRank: workproduct.get('DragAndDropRank'),
                 __WorkProduct: workproduct,
                 __Tasks: [],
                 __Defects: []

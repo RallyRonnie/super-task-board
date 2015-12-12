@@ -14,9 +14,11 @@ Ext.define("TSSuperCardboard", {
         }
     },
     
+    layout: { type: 'border' },
+    
     items: [
-        {xtype:'container', itemId:'selector_box', layout: { type:'hbox' }, minHeight: 25},
-        {xtype:'container', itemId:'display_box'}
+        {xtype:'container', itemId:'selector_box', region: 'north',  layout: { type:'hbox' }, minHeight: 25},
+        {xtype:'container', itemId:'display_box' , region: 'center', layout: { type: 'border'} }
     ],
     
     launch: function() {
@@ -76,8 +78,6 @@ Ext.define("TSSuperCardboard", {
         
         this.setLoading('Fetching items in iteration ' + this.iteration.get('Name'));
         
-        // columns: "{"":{"stateMapping":"Defined"},"Project Management":{"stateMapping":"Defined"},"QA Testing":{"stateMapping":"In-Progress"},"Software Development":{"stateMapping":""},"Planning (Non-Cap)":{"stateMapping":""},"Default (Non-Cap)":{"stateMapping":""}}"
-    
         var columnSettings = null;
         if ( !Ext.isEmpty(this.getSetting('columns') ) ){
             columnSettings = this.getSetting('columns');
@@ -90,6 +90,8 @@ Ext.define("TSSuperCardboard", {
             iteration: this.iteration,
             taskStateField: this.getSetting('taskStateField'),
             columnSettings: columnSettings,
+            region: 'center',
+            layout: 'fit',
             listeners: {
                 gridReady: function() {
                     me.setLoading(false);

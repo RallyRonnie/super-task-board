@@ -8,6 +8,10 @@ div.ts_workproduct_card {
     margin: 10px 5px 5px 5px;
 }
 
+.x-border-layout-ct {
+    background-color: #fff;
+}
+
 div.actions {
     color: #337ec6;
     text-align: right;
