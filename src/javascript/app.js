@@ -35,7 +35,6 @@ Ext.define("TSSuperCardboard", {
             listeners: {
                 scope: this,
                 create: function( button, created_record){
-                    this.logger.log("Created new item:", created_record);
                     var me = this;
                     var iteration = this.iteration || this.down('rallyiterationcombobox').getRecord();
                     

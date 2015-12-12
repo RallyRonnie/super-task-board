@@ -83,7 +83,6 @@
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
-                                console.log('row updated');
                                 var tasks = row.get('__Tasks') || [];
                                 var defects = row.get('__Defects') || [];
                                 
@@ -384,6 +383,9 @@
     
     _getColumns: function(task_states) {
         var me = this;
+        var columnSettings = this.columnSettings;
+        
+        console.log('column settings:', this.columnSettings);
         
         var columns = [{
             dataIndex: '__WorkProduct',
@@ -395,27 +397,30 @@
             }
         }];
         
+
         Ext.Array.each(task_states, function(state){
-            columns.push({
-                dataIndex: state,
-                text: state || "No Entry",
-                flex: 1,
-                align: 'center',
-                renderer: function(value) {
-                    var html = [];
-                    
-                    Ext.Array.each(value, function(item){
-                        html.push(
-                            Ext.String.format(
-                                '<div id="{0}" style="height:37px;float: left;"></div>',
-                                item.ObjectID
-                            )
-                        );
-                    });
-                    
-                    return html.join('\n');
-                }
-            });
+            if ( Ext.isEmpty(columnSettings) || !Ext.isEmpty(columnSettings[state]) ) {
+                columns.push({
+                    dataIndex: state,
+                    text: state || "No Entry",
+                    flex: 1,
+                    align: 'center',
+                    renderer: function(value) {
+                        var html = [];
+                        
+                        Ext.Array.each(value, function(item){
+                            html.push(
+                                Ext.String.format(
+                                    '<div id="{0}" style="height:37px;float: left;"></div>',
+                                    item.ObjectID
+                                )
+                            );
+                        });
+                        
+                        return html.join('\n');
+                    }
+                });
+            }
         });
         
         return columns;
@@ -495,32 +500,6 @@
         });
         
         return deferred.promise;
-//        var deferred = Ext.create('Deft.Deferred');
-//        var me = this;
-//        var promises = [];
-//        
-//        Ext.Array.each(workproducts, function(workproduct){
-//            var oid = workproduct.get('ObjectID');
-//            promises.push( function() { return me._loadDefectsForArtifact(oid); } );
-//        });
-//        
-//        Deft.Chain.sequence(promises).then({
-//            scope: this,
-//            success: function(defect_array) {
-//                var defects_by_workproduct = {};
-//                // collapse an array of hashes into one hash
-//                Ext.Array.each(defect_array, function(defects_by_a_workproduct){
-//                    defects_by_workproduct = Ext.apply(defects_by_workproduct, defects_by_a_workproduct);
-//                });
-//                
-//                deferred.resolve( defects_by_workproduct );
-//            },
-//            failure: function(msg) {
-//                deferred.reject(msg)
-//            }
-//        });
-//        
-//        return deferred.promise;
     },
     
     _loadTasks: function(workproducts) {
@@ -597,31 +576,6 @@
         return rows;
     },
     
-//    _loadDefectsForArtifact: function(oid) {
-//        var deferred = Ext.create('Deft.Deferred');
-//        
-//        var config = {
-//            model: 'Defect',
-//            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','DisplayColor',
-//                'Blocked','Owner','BlockedReason','Description',this.taskStateField],
-//            filters: [{property:'Requirement.ObjectID', value: oid}]
-//        };
-//        
-//        TSUtilities.loadWSAPIItems(config).then({
-//            scope: this,
-//            success: function(defects) {
-//                var defects_by_workproduct = {};
-//                defects_by_workproduct[oid] = defects;
-//                deferred.resolve(defects_by_workproduct);
-//            },
-//            failure: function(msg) {
-//                deferred.reject(msg);
-//            }
-//        });
-//
-//        return deferred;
-//    },
-    
     _getFieldValues: function(model_name,field_name){
         var deferred = Ext.create('Deft.Deferred');
         
@@ -676,7 +630,6 @@
     },
     
     _createNewFor: function(target_type, parent_record, row) {
-        console.log('create new ', target_type);
         Rally.data.ModelFactory.getModel({
             type: target_type,
             success: function(model) {
