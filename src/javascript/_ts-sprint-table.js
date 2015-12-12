@@ -453,30 +453,74 @@
     _loadChildDefects: function(workproducts) {
         var deferred = Ext.create('Deft.Deferred');
         var me = this;
-        var promises = [];
         
+        var workproducts_by_oid = {};
         Ext.Array.each(workproducts, function(workproduct){
             var oid = workproduct.get('ObjectID');
-            promises.push( function() { return me._loadDefectsForArtifact(oid); } );
+            workproducts_by_oid[oid] = workproduct;
         });
         
-        Deft.Chain.sequence(promises).then({
+        var iteration_filter = [{property:'Requirement.Iteration',value:''}];
+        if ( this.iteration ) {
+            iteration_filter = [{property:'Requirement.Iteration.Name', value:this.iteration.get('Name')}];
+        }
+        
+        var defect_store = Ext.create('Rally.data.wsapi.Store',{
+            model: 'Defect',
+            context: { projectScopeDown: false, projectScopeUp: false },
+            filters: iteration_filter,
+            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','DisplayColor',
+                'Blocked','Owner','BlockedReason','Description','Requirement',this.taskStateField]
+        });
+        
+        defect_store.load({
             scope: this,
-            success: function(defect_array) {
-                var defects_by_workproduct = {};
-                // collapse an array of hashes into one hash
-                Ext.Array.each(defect_array, function(defects_by_a_workproduct){
-                    defects_by_workproduct = Ext.apply(defects_by_workproduct, defects_by_a_workproduct);
-                });
-                
-                deferred.resolve( defects_by_workproduct );
-            },
-            failure: function(msg) {
-                deferred.reject(msg)
+            callback : function(records, operation, successful) {
+                if (successful){
+                    var defects_by_workproduct = {};
+                    Ext.Array.each(records, function(record){
+                        var workproduct_oid = record.get('Requirement').ObjectID;
+                        if ( Ext.isEmpty(defects_by_workproduct[workproduct_oid]) ) {
+                            defects_by_workproduct[workproduct_oid] = [];
+                        }
+                        defects_by_workproduct[workproduct_oid].push(record);
+                    });
+                    
+                    deferred.resolve(defects_by_workproduct);
+                } else {
+                    console.error('Problem loading: ' + operation.error.errors.join('. '));
+                    Ext.Msg.alert('Problem loading child defects', operation.error.errors.join('. '));
+                }
             }
         });
         
         return deferred.promise;
+//        var deferred = Ext.create('Deft.Deferred');
+//        var me = this;
+//        var promises = [];
+//        
+//        Ext.Array.each(workproducts, function(workproduct){
+//            var oid = workproduct.get('ObjectID');
+//            promises.push( function() { return me._loadDefectsForArtifact(oid); } );
+//        });
+//        
+//        Deft.Chain.sequence(promises).then({
+//            scope: this,
+//            success: function(defect_array) {
+//                var defects_by_workproduct = {};
+//                // collapse an array of hashes into one hash
+//                Ext.Array.each(defect_array, function(defects_by_a_workproduct){
+//                    defects_by_workproduct = Ext.apply(defects_by_workproduct, defects_by_a_workproduct);
+//                });
+//                
+//                deferred.resolve( defects_by_workproduct );
+//            },
+//            failure: function(msg) {
+//                deferred.reject(msg)
+//            }
+//        });
+//        
+//        return deferred.promise;
     },
     
     _loadTasks: function(workproducts) {
@@ -519,7 +563,7 @@
                     deferred.resolve(tasks_by_workproduct);
                 } else {
                     console.error('Problem loading: ' + operation.error.errors.join('. '));
-                    Ext.Msg.alert('Problem loading milestones', operation.error.errors.join('. '));
+                    Ext.Msg.alert('Problem loading child tasks', operation.error.errors.join('. '));
                 }
             }
         });
@@ -553,30 +597,30 @@
         return rows;
     },
     
-    _loadDefectsForArtifact: function(oid) {
-        var deferred = Ext.create('Deft.Deferred');
-        
-        var config = {
-            model: 'Defect',
-            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','DisplayColor',
-                'Blocked','Owner','BlockedReason','Description',this.taskStateField],
-            filters: [{property:'Requirement.ObjectID', value: oid}]
-        };
-        
-        TSUtilities.loadWSAPIItems(config).then({
-            scope: this,
-            success: function(tasks) {
-                var defects_by_workproduct = {};
-                defects_by_workproduct[oid] = tasks;
-                deferred.resolve(defects_by_workproduct);
-            },
-            failure: function(msg) {
-                deferred.reject(msg);
-            }
-        });
-
-        return deferred;
-    },
+//    _loadDefectsForArtifact: function(oid) {
+//        var deferred = Ext.create('Deft.Deferred');
+//        
+//        var config = {
+//            model: 'Defect',
+//            fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','DisplayColor',
+//                'Blocked','Owner','BlockedReason','Description',this.taskStateField],
+//            filters: [{property:'Requirement.ObjectID', value: oid}]
+//        };
+//        
+//        TSUtilities.loadWSAPIItems(config).then({
+//            scope: this,
+//            success: function(defects) {
+//                var defects_by_workproduct = {};
+//                defects_by_workproduct[oid] = defects;
+//                deferred.resolve(defects_by_workproduct);
+//            },
+//            failure: function(msg) {
+//                deferred.reject(msg);
+//            }
+//        });
+//
+//        return deferred;
+//    },
     
     _getFieldValues: function(model_name,field_name){
         var deferred = Ext.create('Deft.Deferred');
