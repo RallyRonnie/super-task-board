@@ -1,9 +1,17 @@
 #TS Super Cardboard
 
+An iteration task board with several features:
+
+* Allows for custom task states that can be mapped to Task states (much like Kanban)
+* Add new items and change items on the board
+* Filter by user
+** If a task/child defect belongs to the filtered user, show
+** If a scheduled story/defect belongs to the filtered user, show it and all of its tasks/child defects
 
 ## Development Notes
 
 * An example of a field combobox that has fields in an array of models
+* An example of drag and drop inside of a grid
 
 ### First Load
 

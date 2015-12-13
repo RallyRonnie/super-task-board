@@ -88,7 +88,8 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         var display_fields = [ 
             { text: 'Name', dataIndex: 'Name', editor: { xtype:'rallytextfield', height: 25 } },
             { text: 'Owner', dataIndex: 'Owner', editor: {
-                    xtype: 'rallyusersearchcombobox'
+                    xtype: 'rallyusersearchcombobox',
+                    project: Rally.getApp().getContext().getProject()._ref
                 }
             }
         ];

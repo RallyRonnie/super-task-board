@@ -30,6 +30,7 @@ Ext.define("TSSuperCardboard", {
         var container = this.down('#selector_box');
         container.add({
             xtype: 'rallyaddnew',
+            minWidth: 100,
             ignoredRequiredFields: ['Name', 'Project', 'ScheduleState','State'],
             recordTypes: ['User Story','Defect'],
             listeners: {
@@ -47,6 +48,54 @@ Ext.define("TSSuperCardboard", {
                                 }
                             }
                         });
+                    }
+                }
+            }
+        });
+        
+        container.add({
+            xtype:'rallycheckboxfield',
+            stateId: 'com.rallydev.technicalservices.superboard.showownerfilter',
+            stateful: true,
+            stateEvents: ['change'],
+            padding: 2,
+            listeners: {
+                scope: this,
+                change: function(checkbox) {
+                    var userbox = this.down('rallyusersearchcombobox');
+                    if (userbox){
+                        if (checkbox.getValue()) {
+                            userbox.setDisabled(false);
+                            this.sprint_table.applyOwnerFilter(userbox.getValue());
+                        } else {
+                            userbox.setDisabled(true);
+                            this.sprint_table.applyOwnerFilter('all');
+                        }
+                    }
+                }
+            }
+        });
+        
+        container.add({
+            xtype: 'rallyusersearchcombobox',
+            project: this.getContext().getProject()._ref,
+            fieldLabel: 'Filter by Owner:',
+            disabled: true,
+            allowNoEntry: true,
+            padding: 2,
+            stateId: 'com.rallydev.technicalservices.superboard.ownerfilter',
+            stateful: true,
+            stateEvents: ['select','change'],
+            listeners: {
+                scope: this,
+                change: function(userbox) {
+                    if ( this.down('tssprinttable') ) {
+                        this.down('tssprinttable').applyOwnerFilter(userbox.getValue());
+                    }
+                },
+                setValue: function(userbox) {
+                    if ( this.down('tssprinttable') ) {
+                        this.down('tssprinttable').applyOwnerFilter(userbox.getValue());
                     }
                 }
             }
@@ -93,6 +142,13 @@ Ext.define("TSSuperCardboard", {
             layout: 'fit',
             listeners: {
                 gridReady: function() {
+                    var checkbox = me.down('rallycheckboxfield');
+                    var userbox  = me.down('rallyusersearchcombobox');
+                    
+                    if ( checkbox && checkbox.getValue() ) {
+                        userbox.setDisabled(false);
+                        me.sprint_table.applyOwnerFilter(userbox.getValue());
+                    }
                     me.setLoading(false);
                 }
             }

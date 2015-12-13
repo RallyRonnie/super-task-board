@@ -112,6 +112,58 @@
         
     },
     
+    applyOwnerFilter: function(user_ref) {
+        var store = this.grid.getStore();
+        var original_rows = Ext.clone( this._original_rows );
+        var rows = [];
+        
+        store.removeAll(true);
+        
+        if ( user_ref == 'all' ) {
+            rows = original_rows;
+        } else {
+            Ext.Array.each( original_rows, function(original_row) {
+                var workproduct = original_row.get('__WorkProduct');
+                var original_tasks   = original_row.get('__Tasks');
+                var original_defects = original_row.get('__Defects');
+                
+                var wp_owner = workproduct.get('Owner');
+                if ( !Ext.isEmpty(wp_owner) && wp_owner._ref == user_ref ) {
+                    rows.push(original_row);
+                } else {
+                    var row = Ext.create('TSTableRow',{
+                        DragAndDropRank: workproduct.get('DragAndDropRank'),
+                        __WorkProduct: workproduct,
+                        __Tasks: [],
+                        __Defects: []
+                    });
+        
+                    var tasks = Ext.Array.filter(original_tasks, function(item){
+                        var owner = item.get('Owner');
+                        return (owner && owner._ref == user_ref || Ext.isEmpty(owner) && Ext.isEmpty(user_ref));
+                    });
+                                
+                    var defects = Ext.Array.filter(original_defects, function(item){
+                        var owner = item.get('Owner');
+                        return (owner && owner._ref == user_ref || Ext.isEmpty(owner) && Ext.isEmpty(user_ref));
+                    });
+                    
+                    row.addTasks(tasks);
+                    row.addDefects(defects);
+                    
+                    if ( tasks.length > 0 || defects.length > 0 ) {
+                        rows.push(row);
+                    }
+                }
+            });
+        }
+        
+        store.loadRecords(rows);
+        this._addTaskCards(rows);
+        this._setWorkItemListeners(rows);
+        
+    },
+    
     _loadCards: function() {
         var me = this;
         
@@ -128,6 +180,7 @@
                     success: function(rows) {
                         this._addTaskCards(rows);
                         this._setWorkItemListeners(rows);
+                        this.fireEvent('gridReady', this, this.grid);
                     }
                 });
             },
@@ -384,9 +437,7 @@
     _getColumns: function(task_states) {
         var me = this;
         var columnSettings = this.columnSettings;
-        
-        console.log('column settings:', this.columnSettings);
-        
+                
         var columns = [{
             dataIndex: '__WorkProduct',
             text: 'Features',
@@ -443,8 +494,9 @@
                 var rows = this._getRowsFromWorkproducts(workproducts,tasks_by_workproduct,defects_by_workproduct);
 
                 table_store.loadRecords(rows);
+
+                this._original_rows = rows;
                 
-                this.fireEvent('gridReady', this, this.grid);
                 deferred.resolve(rows);
             },
             failure: function(msg) {
