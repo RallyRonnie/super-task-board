@@ -62,53 +62,15 @@
         
         this._getFieldValues('task',this.taskStateField).then({
             success: function(task_values) {
-                var columns = this._getColumns(task_values);
-                this._defineCustomModel(columns);
+                
+                this.state_values = task_values;
                 
                 var table_store = Ext.create('Rally.data.custom.Store',{
                     model: 'TSTableRow',
                     sorters: [{property:'DragAndDropRank', direction:'ASC'}]
                 });
                 
-                this.grid = this.add({ 
-                    xtype:'rallygrid', 
-                    store: table_store,
-                    columnCfgs: columns,
-                    showPagingToolbar : false,
-                    showRowActionsColumn : false,
-                    sortableColumns: false,
-                    disableSelection: true,
-                    enableColumnMove: false,
-                    viewConfig: {
-                        
-                        listeners: {
-                            scope: this,
-                            itemupdate: function(row) {
-                                var tasks = row.get('__Tasks') || [];
-                                var defects = row.get('__Defects') || [];
-                                
-                                var items = Ext.Array.push(tasks,defects);
-                                
-                                Ext.Array.each(items, function(record) {
-                                    var record_oid = record.ObjectID || record.get('ObjectID');
-                                    this._createTaskCard(record_oid,record,row);
-                                },this);
-                                this._setWorkItemListeners([row]);
-                            }
-                        },
-                        plugins: [
-                            {
-                                ptype: 'tscelldragdrop'
-                            },
-                            {
-                                ptype: 'gridviewdragdrop',
-                                dragText: 'Drag and drop to reorder'
-                            }
-                        ]
-                    }
-                });
-                
-                this._loadCards();
+                this._makeGrid(table_store);
             },
             failure: function(msg) {
                 Ext.Msg.alert('Problem finding valid field values', msg);
@@ -118,7 +80,83 @@
         
     },
     
+    _makeGrid: function(table_store) {
+        this.removeAll();
+        
+        var me = this;
+        var columns = this._getColumns(this.state_values);
+        this._defineCustomModel(columns);
+                
+        this.grid = this.add({ 
+            xtype:'rallygrid', 
+            store: table_store,
+            columnCfgs: columns,
+            showPagingToolbar : false,
+            showRowActionsColumn : false,
+            sortableColumns: false,
+            disableSelection: true,
+            enableColumnMove: false,
+            viewConfig: {
+                listeners: {
+                    scope: this,
+                    itemupdate: function(row) {
+                        console.log('itemupdate', row);
+                        var tasks = row.get('__Tasks') || [];
+                        var defects = row.get('__Defects') || [];
+                        
+                        var items = Ext.Array.push(tasks,defects);
+                        
+                        Ext.Array.each(items, function(record) {
+                            var record_oid = record.ObjectID || record.get('ObjectID');
+                            this._createTaskCard(record_oid,record,row);
+                        },this);
+                        this._setWorkItemListeners([row]);
+                    },
+                    drop: function(node, data, over_row, dropPosition, eOpts) {
+                        console.log('    data', data);
+                        var record_idx = data.item.attributes['data-recordindex'].nodeValue;
+                        console.log('    id', record_idx);
+                        var moved_row = this.grid.getStore().getAt(record_idx);
+                        // where dropped (the model then before or after)
+                        console.log('    target_row', over_row);
+                        console.log('    dropPosition', dropPosition);
+                        
+                        if ( !Ext.isEmpty(moved_row) && !Ext.isEmpty(over_row) ) {
+                            var moved_item = moved_row.get('__WorkProduct');
+                            var over_item = over_row.get('__WorkProduct');
+                            
+                            Rally.data.Ranker.rankRelative({
+                                recordToRank: moved_item,
+                                relativeRecord: over_item,
+                                position: dropPosition,
+                                saveOptions: {
+                                    scope: me,
+                                    callback: function() {
+                                        me._makeGrid(table_store);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                },
+                plugins: [
+                    {
+                        ptype: 'tscelldragdrop'
+                    },
+                    {
+                        ptype: 'gridviewdragdrop',
+                        dragText: 'Drag and drop to reorder'
+                    }
+                ]
+            }
+        });
+        
+        this._loadCards();
+    },
+    
     applyOwnerFilter: function(user_ref) {
+        this.userFilter = user_ref;
+        
         var store = this.grid.getStore();
         var original_rows = Ext.clone( this._original_rows );
         var rows = [];
@@ -703,7 +741,7 @@
                     config.Requirement = { _ref: parent_ref }
                 }
                 
-                var item = Ext.create(model, config);
+                var item = Ext.create(model, config); 
                 item.save({
                     callback: function(record,operation) {
                         if ( target_type == "task" ) {
