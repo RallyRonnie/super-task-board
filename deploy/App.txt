@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sat Dec 12 2015 18:43:52 GMT-0800 (PST) -->
+    <!--  Build Date: Sat Dec 12 2015 18:52:59 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sat Dec 12 2015 18:43:52 GMT-0800 (PST)";
-        var CHECKSUM = 89627608172;
+        var APP_BUILD_DATE = "Sat Dec 12 2015 18:52:59 GMT-0800 (PST)";
+        var CHECKSUM = 89882484550;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -956,6 +956,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                     disableSelection: true,
                     enableColumnMove: false,
                     viewConfig: {
+                        
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
@@ -971,11 +972,16 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                                 this._setWorkItemListeners([row]);
                             }
                         },
-                        plugins: {
-                            ptype: 'tscelldragdrop'
-                        }
-                    },
-                    enableColumnHide: true /* doesn't do anything yet */
+                        plugins: [
+                            {
+                                ptype: 'tscelldragdrop'
+                            },
+                            {
+                                ptype: 'gridviewdragdrop',
+                                dragText: 'Drag and drop to reorder'
+                            }
+                        ]
+                    }
                 });
                 
                 this._loadCards();
@@ -1004,7 +1010,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 var original_defects = original_row.get('__Defects');
                 
                 var wp_owner = workproduct.get('Owner');
-                if ( !Ext.isEmpty(wp_owner) && wp_owner._ref == user_ref ) {
+                if ( !Ext.isEmpty(wp_owner) && wp_owner._ref == user_ref || Ext.isEmpty(wp_owner) && Ext.isEmpty(user_ref)) {
                     rows.push(original_row);
                 } else {
                     var row = Ext.create('TSTableRow',{

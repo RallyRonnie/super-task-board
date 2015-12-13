@@ -80,6 +80,7 @@
                     disableSelection: true,
                     enableColumnMove: false,
                     viewConfig: {
+                        
                         listeners: {
                             scope: this,
                             itemupdate: function(row) {
@@ -95,11 +96,16 @@
                                 this._setWorkItemListeners([row]);
                             }
                         },
-                        plugins: {
-                            ptype: 'tscelldragdrop'
-                        }
-                    },
-                    enableColumnHide: true /* doesn't do anything yet */
+                        plugins: [
+                            {
+                                ptype: 'tscelldragdrop'
+                            },
+                            {
+                                ptype: 'gridviewdragdrop',
+                                dragText: 'Drag and drop to reorder'
+                            }
+                        ]
+                    }
                 });
                 
                 this._loadCards();
@@ -128,7 +134,7 @@
                 var original_defects = original_row.get('__Defects');
                 
                 var wp_owner = workproduct.get('Owner');
-                if ( !Ext.isEmpty(wp_owner) && wp_owner._ref == user_ref ) {
+                if ( !Ext.isEmpty(wp_owner) && wp_owner._ref == user_ref || Ext.isEmpty(wp_owner) && Ext.isEmpty(user_ref)) {
                     rows.push(original_row);
                 } else {
                     var row = Ext.create('TSTableRow',{
