@@ -65,12 +65,12 @@
                 
                 this.state_values = task_values;
                 
-                var table_store = Ext.create('Rally.data.custom.Store',{
+                this.table_store = Ext.create('Rally.data.custom.Store',{
                     model: 'TSTableRow',
                     sorters: [{property:'DragAndDropRank', direction:'ASC'}]
                 });
                 
-                this._makeGrid(table_store);
+                this._makeGrid();
             },
             failure: function(msg) {
                 Ext.Msg.alert('Problem finding valid field values', msg);
@@ -80,8 +80,9 @@
         
     },
     
-    _makeGrid: function(table_store) {
+    _makeGrid: function() {
         this.removeAll();
+        var table_store = this.table_store;
         
         var me = this;
         var columns = this._getColumns(this.state_values);
@@ -112,6 +113,7 @@
                         },this);
                         this._setWorkItemListeners([row]);
                     },
+
                     drop: function(node, data, over_row, dropPosition, eOpts) {
                         console.log('    data', data);
                         var record_idx = data.item.attributes['data-recordindex'].nodeValue;
@@ -132,7 +134,7 @@
                                 saveOptions: {
                                     scope: me,
                                     callback: function() {
-                                        me._makeGrid(table_store);
+                                        me._makeGrid();
                                     }
                                 }
                             });
@@ -142,10 +144,6 @@
                 plugins: [
                     {
                         ptype: 'tscelldragdrop'
-                    },
-                    {
-                        ptype: 'gridviewdragdrop',
-                        dragText: 'Drag and drop to reorder'
                     }
                 ]
             }
@@ -366,6 +364,21 @@
                     }
                 }
                 record.save();
+            },
+            
+            rankRelative: function(recordToRank, relativeRecord, dropPosition){
+            
+                Rally.data.Ranker.rankRelative({
+                    recordToRank: recordToRank,
+                    relativeRecord: relativeRecord,
+                    position: dropPosition,
+                    saveOptions: {
+                        scope: me,
+                        callback: function() {
+                            me._makeGrid();
+                        }
+                    }
+                });
             }
         });
     },

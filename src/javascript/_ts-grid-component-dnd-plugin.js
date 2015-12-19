@@ -12,7 +12,8 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     extend: 'Ext.AbstractPlugin',
     alias: 'plugin.tscelldragdrop',
 
-    uses: ['Ext.view.DragZone'],
+    uses: ['Ext.view.DragZone',
+        'Ext.grid.ViewDropZone'],
 
     /**
      * @cfg {Boolean} enforceType
@@ -45,7 +46,9 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
      *
      * Defaults to green.
      */
-    dropBackgroundColor: 'green',
+    dropBackgroundColor: '#C0D9AF',
+    
+    dropLineColor: 'green',
 
     /**
      * @cfg {Boolean} noDropBackgroundColor
@@ -53,7 +56,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
      *
      * Defaults to red.
      */
-    noDropBackgroundColor: 'red',
+    noDropBackgroundColor: '#FFBAD2',
 
     //<locale>
     /**
@@ -226,7 +229,10 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 onNodeEnter: function (target, dd, e, dragData) {
                     var self = this,
                         destRecordID = target.record.get('__WorkProduct').get('ObjectID'),
-                        sourceRecordID = dragData.record.get('__WorkProduct').get('ObjectID');
+                        sourceRecordID = dragData.record.get('__WorkProduct').get('ObjectID'),
+                        task = dragData.task,
+                        view = self.view,
+                        store = view.getStore();
 
                     delete self.dropOK;
 
@@ -234,12 +240,48 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                     if (!target || target.node === dragData.item.parentNode) {
                         return;
                     }
+                    
 
-                    // Can only drop onto the same row
+                    // if no task, then we're moving the story
+                    if ( !task ) {
+                        if ( destRecordID !== sourceRecordID) {
+                            self.dropOK = true;
+
+                            var source_index = store.indexOf(dragData.record),
+                                target_index = store.indexOf(target.record),
+                                store_count = store.getCount();
+                            
+                            var config = {};
+                            var borderStyle = '2px solid ' + me.dropLineColor;
+                            
+                            if ( target_index > source_index ) {
+                                dragData.dropPosition = 'after';
+                                config.borderBottom = borderStyle;
+                            } else {
+                                dragData.dropPosition = 'before';
+                                config.borderTop  = borderStyle;
+                            }
+                            Ext.fly(target.node).applyStyles(config);
+                        }
+                        return;
+                    }
+                    
+                    self.dropOK = true;
+
+                    // Can only drop tasks onto the same row
                     if (destRecordID !== sourceRecordID) {
-
                         self.dropOK = false;
+                    }
 
+                    if ( self.dropOK ) {
+                        if (me.dropCls) {
+                            Ext.fly(target.node).addCls(me.dropCls);
+                        } else {
+                            Ext.fly(target.node).applyStyles({
+                                backgroundColor: me.dropBackgroundColor
+                            });
+                        }
+                    } else {
                         if (me.noDropCls) {
                             Ext.fly(target.node).addCls(me.noDropCls);
                         } else {
@@ -247,18 +289,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                                 backgroundColor: me.noDropBackgroundColor
                             });
                         }
-
-                        return false;
-                    }
-
-                    self.dropOK = true;
-
-                    if (me.dropCls) {
-                        Ext.fly(target.node).addCls(me.dropCls);
-                    } else {
-                        Ext.fly(target.node).applyStyles({
-                            backgroundColor: me.dropBackgroundColor
-                        });
                     }
                 },
 
@@ -276,7 +306,9 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                         Ext.fly(target.node).removeCls(cls);
                     } else {
                         Ext.fly(target.node).applyStyles({
-                            backgroundColor: ''
+                            backgroundColor: '',
+                            borderTop: '',
+                            borderBottom: ''
                         });
                     }
                 },
@@ -287,17 +319,31 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                         
                         var target_row = target.record;
                         var target_column = target.columnName;
+                        var target_record = target.record.get('__WorkProduct');
                         
                         var source_task = dragData.task;
                         var source_column = dragData.columnName;
+                        var source_record = dragData.record.get('__WorkProduct');
                         
-                        if ( source_column == target_column ) {
-                            // since we're in the same row, nothing to do!
-                            return true;
+                        console.log('source task:', source_task);
+                        
+                        if ( source_task ) {
+                            if ( source_column == target_column ) {
+                                // since we're in the same row, nothing to do!
+                                return true;
+                            }
+                            
+                            target_row.changeTaskColumn(source_task, source_column, target_column);
+                        } else {
+                            var dropPosition = dragData.dropPosition || "after";
+
+                            if ( source_record.get('ObjectID') == target_record.get('ObjectID') ) {
+                                return;
+                            }
+                            
+                            target_row.rankRelative(source_record, target_record, dropPosition);
                         }
                         
-                        target_row.changeTaskColumn(source_task, source_column, target_column);
-
                         return true;
                     }
                 },
@@ -308,6 +354,10 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     },
     
     _getTaskFromRecord: function(card_id, row) {
+        
+        if ( Ext.isEmpty(card_id) ) {
+            return null;
+        }
         var task_id = card_id.replace(/T/,"");
         var item = null;
         Ext.Array.each(row.get('__Tasks'), function(task){
