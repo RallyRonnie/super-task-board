@@ -79,8 +79,11 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _getTitle: function(record) {
         var icon = Rally.technicalservices.IconUtility.getIconForType(record.get('_type'));
-        
-        return Ext.String.format("<span class='{0}'> </span>{1}", icon, record.get('FormattedID'));
+        return Ext.String.format("<span class='{0}'> </span><a href='{1}' target='_blank'>{2}</a>", 
+            icon, 
+            Rally.nav.Manager.getDetailUrl(record),
+            record.get('FormattedID')
+        );
     },
     
     
