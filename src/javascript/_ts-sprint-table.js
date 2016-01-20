@@ -101,7 +101,6 @@
                 listeners: {
                     scope: this,
                     itemupdate: function(row) {
-                        console.log('itemupdate', row);
                         var tasks = row.get('__Tasks') || [];
                         var defects = row.get('__Defects') || [];
                         
@@ -112,33 +111,6 @@
                             this._createTaskCard(record_oid,record,row);
                         },this);
                         this._setWorkItemListeners([row]);
-                    },
-
-                    drop: function(node, data, over_row, dropPosition, eOpts) {
-                        console.log('    data', data);
-                        var record_idx = data.item.attributes['data-recordindex'].nodeValue;
-                        console.log('    id', record_idx);
-                        var moved_row = this.grid.getStore().getAt(record_idx);
-                        // where dropped (the model then before or after)
-                        console.log('    target_row', over_row);
-                        console.log('    dropPosition', dropPosition);
-                        
-                        if ( !Ext.isEmpty(moved_row) && !Ext.isEmpty(over_row) ) {
-                            var moved_item = moved_row.get('__WorkProduct');
-                            var over_item = over_row.get('__WorkProduct');
-                            
-                            Rally.data.Ranker.rankRelative({
-                                recordToRank: moved_item,
-                                relativeRecord: over_item,
-                                position: dropPosition,
-                                saveOptions: {
-                                    scope: me,
-                                    callback: function() {
-                                        me._makeGrid();
-                                    }
-                                }
-                            });
-                        }
                     }
                 },
                 plugins: [
@@ -507,7 +479,7 @@
         
 
         Ext.Array.each(task_states, function(state){
-            if ( Ext.isEmpty(columnSettings) || !Ext.isEmpty(columnSettings[state]) ) {
+            if ( Ext.isEmpty(columnSettings) || !Ext.isEmpty(columnSettings[state]) || Ext.Object.getKeys(columnSettings).length === 0 ) {
                 columns.push({
                     dataIndex: state,
                     text: state || "No Entry",
@@ -739,6 +711,7 @@
     },
     
     _createNewFor: function(target_type, parent_record, row) {
+        var me = this;
         Rally.data.ModelFactory.getModel({
             type: target_type,
             success: function(model) {
@@ -762,8 +735,8 @@
                         } else {
                             row.addDefects([record]);
                         }
-                    },
-                    scope: this
+                        me._showQuickView(record,row);
+                    }
                 });
                 
             }

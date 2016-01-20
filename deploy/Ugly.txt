@@ -3,10 +3,10 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Fri Dec 18 2015 18:36:44 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Jan 20 2016 15:01:45 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Dec 18 2015 18:36:44 GMT-0800 (PST)";
+        var APP_BUILD_DATE = "Wed Jan 20 2016 15:01:45 GMT-0800 (PST)";
         var CHECKSUM = [%= checksum %];
     </script>
     

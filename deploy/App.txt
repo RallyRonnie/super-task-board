@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Fri Dec 18 2015 18:36:43 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Jan 20 2016 15:01:45 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Dec 18 2015 18:36:43 GMT-0800 (PST)";
-        var CHECKSUM = 98591425233;
+        var APP_BUILD_DATE = "Wed Jan 20 2016 15:01:45 GMT-0800 (PST)";
+        var CHECKSUM = 96002314265;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -1027,7 +1027,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 listeners: {
                     scope: this,
                     itemupdate: function(row) {
-                        console.log('itemupdate', row);
                         var tasks = row.get('__Tasks') || [];
                         var defects = row.get('__Defects') || [];
                         
@@ -1038,33 +1037,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                             this._createTaskCard(record_oid,record,row);
                         },this);
                         this._setWorkItemListeners([row]);
-                    },
-
-                    drop: function(node, data, over_row, dropPosition, eOpts) {
-                        console.log('    data', data);
-                        var record_idx = data.item.attributes['data-recordindex'].nodeValue;
-                        console.log('    id', record_idx);
-                        var moved_row = this.grid.getStore().getAt(record_idx);
-                        // where dropped (the model then before or after)
-                        console.log('    target_row', over_row);
-                        console.log('    dropPosition', dropPosition);
-                        
-                        if ( !Ext.isEmpty(moved_row) && !Ext.isEmpty(over_row) ) {
-                            var moved_item = moved_row.get('__WorkProduct');
-                            var over_item = over_row.get('__WorkProduct');
-                            
-                            Rally.data.Ranker.rankRelative({
-                                recordToRank: moved_item,
-                                relativeRecord: over_item,
-                                position: dropPosition,
-                                saveOptions: {
-                                    scope: me,
-                                    callback: function() {
-                                        me._makeGrid();
-                                    }
-                                }
-                            });
-                        }
                     }
                 },
                 plugins: [
@@ -1433,7 +1405,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         
 
         Ext.Array.each(task_states, function(state){
-            if ( Ext.isEmpty(columnSettings) || !Ext.isEmpty(columnSettings[state]) ) {
+            if ( Ext.isEmpty(columnSettings) || !Ext.isEmpty(columnSettings[state]) || Ext.Object.getKeys(columnSettings).length === 0 ) {
                 columns.push({
                     dataIndex: state,
                     text: state || "No Entry",
@@ -1665,6 +1637,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     },
     
     _createNewFor: function(target_type, parent_record, row) {
+        var me = this;
         Rally.data.ModelFactory.getModel({
             type: target_type,
             success: function(model) {
@@ -1688,8 +1661,8 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                         } else {
                             row.addDefects([record]);
                         }
-                    },
-                    scope: this
+                        me._showQuickView(record,row);
+                    }
                 });
                 
             }
@@ -1937,9 +1910,9 @@ Ext.define('Rally.technicalservices.ColumnSettingsField', {
 
     getErrors: function() {
         var errors = [];
-        if (this._storeLoaded && !Ext.Object.getSize(this._buildSettingValue())) {
-            errors.push('At least one column must be shown.');
-        }
+//        if (this._storeLoaded && !Ext.Object.getSize(this._buildSettingValue())) {
+//            errors.push('At least one column must be shown.');
+//        }
         return errors;
     },
 

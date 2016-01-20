@@ -151,9 +151,9 @@ Ext.define('Rally.technicalservices.ColumnSettingsField', {
 
     getErrors: function() {
         var errors = [];
-        if (this._storeLoaded && !Ext.Object.getSize(this._buildSettingValue())) {
-            errors.push('At least one column must be shown.');
-        }
+//        if (this._storeLoaded && !Ext.Object.getSize(this._buildSettingValue())) {
+//            errors.push('At least one column must be shown.');
+//        }
         return errors;
     },
 
