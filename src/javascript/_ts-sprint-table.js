@@ -391,7 +391,7 @@
                                 '<div class="left-header">',
                                     '<div class="id" style="min-width: 68px">',
                                         '<span class="formatted-id-template">',
-                                            '<a class="formatted-id-link" href="{[this.getArtifactURL(values)]}">',
+                                            '<a class="formatted-id-link" target="_blank" href="{[this.getArtifactURL(values)]}">',
                                                 '<span class="{[this.getArtifactIcon(values)]}"> </span> {FormattedID}',
                                             '</a>',
                                         '</span>',
