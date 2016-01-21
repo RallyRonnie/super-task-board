@@ -297,6 +297,31 @@
                 },this);
             },
             
+            removeRecord: function(record) {
+                console.log('removeRecord',record);
+                var item_array = [];
+                var state = null;
+                
+                if ( record.get('_type') == "task" ) {
+                    item_array = '__Tasks';
+                }
+                
+                if ( record.get('_type') == "defect" ) {
+                    item_array = '__Defects';
+                }
+                
+                if ( item_array.length > 0 ) {
+                    state = record.get(task_state_field);
+                    var state_array = this.get(state);
+                    var clean_array = Ext.Array.filter(state_array, function(old_item){
+                        return ( old_item.ObjectID != record.get('ObjectID') );
+                    });
+                    this.set(state, clean_array);
+                } else {
+                    this.destroy();
+                }
+            },
+            
             changeTaskColumn: function(record, source_column, target_column) {
                 // remove from existing column list in row record
                 var old_column_items = this.get(source_column) || [];
@@ -318,7 +343,6 @@
             // given a task, defect or workproduct that is already known by 
             // this row, replace it with an updated version
             updateExistingRecord: function(record) {
-                //var type = record.get('_type');
                 var version = this.get('_version') || 0;
                 version++;
                 
@@ -764,7 +788,12 @@
         var me = this;
         Ext.create('Rally.technicalservices.artifact.EditDialog', {
             record: record,
-            row: row
+            row: row,
+            listeners: {
+                artifactdeleted: function() {
+                    
+                }
+            }
         }).show();
     }
     

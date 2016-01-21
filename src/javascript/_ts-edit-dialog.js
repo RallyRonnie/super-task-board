@@ -43,6 +43,16 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         var me = this;
         this.callParent(arguments);
         
+        this.addEvents(
+            /**
+             * @event artifactdeleted
+             * Fires when user clicks delete
+             * @param {Rally.technicalservices.artifact.EditDialog} source the dialog
+             */
+            'artifactdeleted'
+        );
+        
+        this._addButtons();
         this._addFields();
         
         this.on('render', function(dialog) {
@@ -54,7 +64,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 var target = Ext.get(pickers[0]);
                 
                 target.on('click', function(evt,c) {
-                        console.log('target', target);
                     Rally.ui.popover.PopoverFactory.bake({
                         target: target,
                         field: 'Color',
@@ -74,6 +83,41 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                     });
                 },this);
             }
+        });
+    },
+    
+    _addButtons: function() {
+        this.addDocked({
+            xtype: 'toolbar',
+            dock: 'bottom',
+            padding: '0 0 10 0',
+            layout: {
+                type: 'hbox',
+                pack: 'center'
+            },
+            ui: 'footer',
+            items: [
+                {
+                    xtype: 'rallybutton',
+                    itemId: 'doneButton',
+                    text: 'Delete',
+                    cls: 'primary rly-small',
+                    scope: this,
+                    disabled: false,
+                    handler: function() {
+                        this._deleteRecord();
+                        this.close();
+                    }
+                },
+                {
+                    xtype: 'rallybutton',
+                    text: 'Close',
+                    cls: 'secondary rly-small',
+                    handler: this.close,
+                    scope: this,
+                    ui: 'link'
+                }
+            ]
         });
     },
     
@@ -187,6 +231,31 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             record.save();
             row.updateExistingRecord(record);
         }
+    },
+    
+    _deleteRecord: function() {
+        var me = this;
+        var row = this.row;
+
+        var record = this.record;
+        var type = record.get('_type');
+        
+        row.removeRecord(record);
+        
+        record.destroy({
+            callback: function(result, operation) {
+                if(operation.wasSuccessful()) {                    
+                    if ( type != "defect" && type != "task" ) {
+                        this.fireEvent('artifactdeleted', this);
+                    } else {
+                        row.updateExistingRecord(null);
+                    }
+                }
+            }
+        });
+        
+
+        
     }
     
 });

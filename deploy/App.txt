@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Wed Jan 20 2016 15:15:43 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Jan 20 2016 16:02:52 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Jan 20 2016 15:15:43 GMT-0800 (PST)";
-        var CHECKSUM = 96368179700;
+        var APP_BUILD_DATE = "Wed Jan 20 2016 16:02:52 GMT-0800 (PST)";
+        var CHECKSUM = 102263788956;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -265,6 +265,16 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         var me = this;
         this.callParent(arguments);
         
+        this.addEvents(
+            /**
+             * @event artifactdeleted
+             * Fires when user clicks delete
+             * @param {Rally.technicalservices.artifact.EditDialog} source the dialog
+             */
+            'artifactdeleted'
+        );
+        
+        this._addButtons();
         this._addFields();
         
         this.on('render', function(dialog) {
@@ -276,7 +286,6 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 var target = Ext.get(pickers[0]);
                 
                 target.on('click', function(evt,c) {
-                        console.log('target', target);
                     Rally.ui.popover.PopoverFactory.bake({
                         target: target,
                         field: 'Color',
@@ -296,6 +305,41 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                     });
                 },this);
             }
+        });
+    },
+    
+    _addButtons: function() {
+        this.addDocked({
+            xtype: 'toolbar',
+            dock: 'bottom',
+            padding: '0 0 10 0',
+            layout: {
+                type: 'hbox',
+                pack: 'center'
+            },
+            ui: 'footer',
+            items: [
+                {
+                    xtype: 'rallybutton',
+                    itemId: 'doneButton',
+                    text: 'Delete',
+                    cls: 'primary rly-small',
+                    scope: this,
+                    disabled: false,
+                    handler: function() {
+                        this._deleteRecord();
+                        this.close();
+                    }
+                },
+                {
+                    xtype: 'rallybutton',
+                    text: 'Close',
+                    cls: 'secondary rly-small',
+                    handler: this.close,
+                    scope: this,
+                    ui: 'link'
+                }
+            ]
         });
     },
     
@@ -409,6 +453,31 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             record.save();
             row.updateExistingRecord(record);
         }
+    },
+    
+    _deleteRecord: function() {
+        var me = this;
+        var row = this.row;
+
+        var record = this.record;
+        var type = record.get('_type');
+        
+        row.removeRecord(record);
+        
+        record.destroy({
+            callback: function(result, operation) {
+                if(operation.wasSuccessful()) {                    
+                    if ( type != "defect" && type != "task" ) {
+                        this.fireEvent('artifactdeleted', this);
+                    } else {
+                        row.updateExistingRecord(null);
+                    }
+                }
+            }
+        });
+        
+
+        
     }
     
 });
@@ -1226,6 +1295,31 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 },this);
             },
             
+            removeRecord: function(record) {
+                console.log('removeRecord',record);
+                var item_array = [];
+                var state = null;
+                
+                if ( record.get('_type') == "task" ) {
+                    item_array = '__Tasks';
+                }
+                
+                if ( record.get('_type') == "defect" ) {
+                    item_array = '__Defects';
+                }
+                
+                if ( item_array.length > 0 ) {
+                    state = record.get(task_state_field);
+                    var state_array = this.get(state);
+                    var clean_array = Ext.Array.filter(state_array, function(old_item){
+                        return ( old_item.ObjectID != record.get('ObjectID') );
+                    });
+                    this.set(state, clean_array);
+                } else {
+                    this.destroy();
+                }
+            },
+            
             changeTaskColumn: function(record, source_column, target_column) {
                 // remove from existing column list in row record
                 var old_column_items = this.get(source_column) || [];
@@ -1247,7 +1341,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             // given a task, defect or workproduct that is already known by 
             // this row, replace it with an updated version
             updateExistingRecord: function(record) {
-                //var type = record.get('_type');
                 var version = this.get('_version') || 0;
                 version++;
                 
@@ -1693,7 +1786,12 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         var me = this;
         Ext.create('Rally.technicalservices.artifact.EditDialog', {
             record: record,
-            row: row
+            row: row,
+            listeners: {
+                artifactdeleted: function() {
+                    
+                }
+            }
         }).show();
     }
     
