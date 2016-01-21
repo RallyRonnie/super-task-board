@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Wed Jan 20 2016 16:02:52 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Jan 20 2016 16:11:22 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Jan 20 2016 16:02:52 GMT-0800 (PST)";
-        var CHECKSUM = 102263788956;
+        var APP_BUILD_DATE = "Wed Jan 20 2016 16:11:22 GMT-0800 (PST)";
+        var CHECKSUM = 103553211450;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -370,6 +370,11 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             ]);
         } else {
             display_fields.push({ text: 'Story Points', dataIndex: 'PlanEstimate', editor: { xtype: 'rallynumberfield', minValue: 0}});
+            display_fields.push({ text: 'Schedule State', dataIndex: 'ScheduleState', editor: {
+                xtype: 'rallyfieldvaluecombobox',
+                model: this.record.get('_type'),
+                field: 'ScheduleState'
+            }});
         }
         
         display_fields = Ext.Array.push(display_fields, [
@@ -1223,7 +1228,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
-                'Blocked','Owner','BlockedReason','Description','DragAndDropRank']
+                'Blocked','Owner','BlockedReason','Description','DragAndDropRank','ScheduleState']
         });
                 
         store.load({
@@ -1423,6 +1428,9 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                                 '<div class="field-content Name type-string">',
                                     '<div class="rui-field-value">{Name}</div>',
                                 '</div>',
+                                '<div class="field-content ScheduleState type-string">',
+                                    '<div class="rui-field-value">{ScheduleState}</div>',
+                                '</div>',
                             '</td>',
                             
                             '<td class="rui-card-right-side has-estimate">',
@@ -1578,7 +1586,8 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             context: { projectScopeDown: false, projectScopeUp: false },
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','DisplayColor',
-                'Blocked','Owner','BlockedReason','Description','Requirement',this.taskStateField]
+                'Blocked','Owner','BlockedReason','Description','Requirement', 
+                this.taskStateField]
         });
         
         defect_store.load({

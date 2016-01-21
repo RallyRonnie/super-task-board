@@ -225,7 +225,7 @@
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
-                'Blocked','Owner','BlockedReason','Description','DragAndDropRank']
+                'Blocked','Owner','BlockedReason','Description','DragAndDropRank','ScheduleState']
         });
                 
         store.load({
@@ -425,6 +425,9 @@
                                 '<div class="field-content Name type-string">',
                                     '<div class="rui-field-value">{Name}</div>',
                                 '</div>',
+                                '<div class="field-content ScheduleState type-string">',
+                                    '<div class="rui-field-value">{ScheduleState}</div>',
+                                '</div>',
                             '</td>',
                             
                             '<td class="rui-card-right-side has-estimate">',
@@ -580,7 +583,8 @@
             context: { projectScopeDown: false, projectScopeUp: false },
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate','DisplayColor',
-                'Blocked','Owner','BlockedReason','Description','Requirement',this.taskStateField]
+                'Blocked','Owner','BlockedReason','Description','Requirement', 
+                this.taskStateField]
         });
         
         defect_store.load({

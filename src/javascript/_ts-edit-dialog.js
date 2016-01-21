@@ -148,6 +148,11 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             ]);
         } else {
             display_fields.push({ text: 'Story Points', dataIndex: 'PlanEstimate', editor: { xtype: 'rallynumberfield', minValue: 0}});
+            display_fields.push({ text: 'Schedule State', dataIndex: 'ScheduleState', editor: {
+                xtype: 'rallyfieldvaluecombobox',
+                model: this.record.get('_type'),
+                field: 'ScheduleState'
+            }});
         }
         
         display_fields = Ext.Array.push(display_fields, [
