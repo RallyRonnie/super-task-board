@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Wed Jan 20 2016 16:11:22 GMT-0800 (PST) -->
+    <!--  Build Date: Mon Jan 25 2016 16:17:20 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Jan 20 2016 16:11:22 GMT-0800 (PST)";
-        var CHECKSUM = 103553211450;
+        var APP_BUILD_DATE = "Mon Jan 25 2016 16:17:20 GMT-0800 (PST)";
+        var CHECKSUM = 104238558886;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -1130,7 +1130,10 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     applyOwnerFilter: function(user_ref) {
         this.userFilter = user_ref;
         
-        var store = this.grid.getStore();
+        var store = this.grid && this.grid.getStore();
+        
+        if ( !store ) { return; }
+        
         var original_rows = Ext.clone( this._original_rows );
         var rows = [];
         
@@ -1503,37 +1506,43 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             flex: 1,
             align: 'center',
             renderer: function(value) {
+                if ( value.get('ScheduleState') == "Accepted" ) {
+                    return "";
+                }
                 return me.workproductTemplate.apply(value.getData());
             }
         }];
-        
 
         Ext.Array.each(task_states, function(state){
             if ( Ext.isEmpty(columnSettings) || !Ext.isEmpty(columnSettings[state]) || Ext.Object.getKeys(columnSettings).length === 0 ) {
-                columns.push({
-                    dataIndex: state,
-                    text: state || "No Entry",
-                    flex: 1,
-                    align: 'center',
-                    renderer: function(value) {
-                        var html = [];
-                        
-                        Ext.Array.each(value, function(item){
-                            html.push(
-                                Ext.String.format(
-                                    '<div id="{0}" style="height:37px;float: left;"></div>',
-                                    item.ObjectID
-                                )
-                            );
-                        });
-                        
-                        return html.join('\n');
-                    }
-                });
+                columns.push(me._getStateColumnCfg(state));
             }
         });
         
         return columns;
+    },
+    
+    _getStateColumnCfg: function(state) {
+        return {
+            dataIndex: state,
+            text: state || "No Entry",
+            flex: 1,
+            align: 'center',
+            renderer: function(value) {
+                var html = [];
+                
+                Ext.Array.each(value, function(item){
+                    html.push(
+                        Ext.String.format(
+                            '<div id="{0}" style="height:37px;float: left;"></div>',
+                            item.ObjectID
+                        )
+                    );
+                });
+                
+                return html.join('\n');
+            }
+        };
     },
     
     _updateRows: function(workproducts, table_store) {

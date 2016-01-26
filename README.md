@@ -8,6 +8,8 @@ An iteration task board with several features:
 ** If a task/child defect belongs to the filtered user, show
 ** If a scheduled story/defect belongs to the filtered user, show it and all of its tasks/child defects
 
+* When a story is set to accepted, it goes to the rightmost column and the tasks disappear.
+
 ## Development Notes
 
 * An example of a field combobox that has fields in an array of models

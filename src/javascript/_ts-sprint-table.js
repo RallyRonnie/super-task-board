@@ -127,7 +127,10 @@
     applyOwnerFilter: function(user_ref) {
         this.userFilter = user_ref;
         
-        var store = this.grid.getStore();
+        var store = this.grid && this.grid.getStore();
+        
+        if ( !store ) { return; }
+        
         var original_rows = Ext.clone( this._original_rows );
         var rows = [];
         
@@ -500,37 +503,43 @@
             flex: 1,
             align: 'center',
             renderer: function(value) {
+                if ( value.get('ScheduleState') == "Accepted" ) {
+                    return "";
+                }
                 return me.workproductTemplate.apply(value.getData());
             }
         }];
-        
 
         Ext.Array.each(task_states, function(state){
             if ( Ext.isEmpty(columnSettings) || !Ext.isEmpty(columnSettings[state]) || Ext.Object.getKeys(columnSettings).length === 0 ) {
-                columns.push({
-                    dataIndex: state,
-                    text: state || "No Entry",
-                    flex: 1,
-                    align: 'center',
-                    renderer: function(value) {
-                        var html = [];
-                        
-                        Ext.Array.each(value, function(item){
-                            html.push(
-                                Ext.String.format(
-                                    '<div id="{0}" style="height:37px;float: left;"></div>',
-                                    item.ObjectID
-                                )
-                            );
-                        });
-                        
-                        return html.join('\n');
-                    }
-                });
+                columns.push(me._getStateColumnCfg(state));
             }
         });
         
         return columns;
+    },
+    
+    _getStateColumnCfg: function(state) {
+        return {
+            dataIndex: state,
+            text: state || "No Entry",
+            flex: 1,
+            align: 'center',
+            renderer: function(value) {
+                var html = [];
+                
+                Ext.Array.each(value, function(item){
+                    html.push(
+                        Ext.String.format(
+                            '<div id="{0}" style="height:37px;float: left;"></div>',
+                            item.ObjectID
+                        )
+                    );
+                });
+                
+                return html.join('\n');
+            }
+        };
     },
     
     _updateRows: function(workproducts, table_store) {
