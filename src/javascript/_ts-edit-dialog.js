@@ -75,9 +75,13 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 
                             var selectedColor = el.hasCls('clear-color') ? null : el.getColor('background-color');
                             target.setStyle('background-color',selectedColor);
+                                                        
                             me.record.set('DisplayColor', selectedColor);
-                            
-                            me.row.updateExistingRecord(me.record);
+                            me.record.save({
+                                success: function(result) {
+                                    me.row.updateExistingRecord(result);
+                                }
+                            });
                             this.destroy();
                         }
                     });
