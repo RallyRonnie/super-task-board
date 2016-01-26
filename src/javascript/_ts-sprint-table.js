@@ -402,8 +402,8 @@
     },
     
     _createTaskCard: function(record_oid, record,row){
-        
         var me = this;
+        
         var tasks = Ext.query('#' + record_oid);
         
         if ( tasks.length === 0 ) {
@@ -791,6 +791,9 @@
     
     _createNewFor: function(target_type, parent_record, row) {
         var me = this;
+        
+
+        
         Rally.data.ModelFactory.getModel({
             type: target_type,
             success: function(model) {
@@ -806,7 +809,14 @@
                     config.Requirement = { _ref: parent_ref }
                 }
                 
+                // assign to first displayed state (column)
+                var columns = me.grid.getColumnCfgs();
+                if ( columns.length > 1 ) {
+                    config[me.taskStateField] = columns[1].dataIndex;
+                }
+                
                 var item = Ext.create(model, config); 
+                
                 item.save({
                     callback: function(record,operation) {
                         if ( target_type == "task" ) {
