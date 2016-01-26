@@ -347,13 +347,29 @@
             // this row, replace it with an updated version
             updateExistingRecord: function(record) {
                 var version = this.get('_version') || 0;
-                version++;
+                if ( this.get('_type') == "hierarchicalrequirement" ) {
+                    version++;
+                    this.set('_version', version);
+                    
+                    return;
+                } 
+
+                // reload the workproduct for rolled up states
+                var wp = this.get('__WorkProduct');
                 
-                // just need to change another field to signal the store for listeners
-                this.set('_version', version);
+                wp.getProxy().getModel().load(wp.get('ObjectID'), {
+                    scope: this,
+                    success: function(result) {
+                        this.set('__WorkProduct', result);
+                        // need to change another field to signal the store for listeners (refresh)
+                        version++;
+                        this.set('_version', version);
+                    }
+                });
+
             },
             
-            setItemField: function(record, field_name, value) {
+            setItemField: function(record, field_name, value) {                
                 record.set(field_name, value);
                 
                 if ( record.get('_type') == 'task' && field_name !== "State" && field_name == task_state_field && !Ext.isEmpty( columnSettings )) {
@@ -362,7 +378,10 @@
                         record.set('State', setting['stateMapping']);
                     }
                 }
-                record.save();
+                record.save().then({
+                    scope: this,
+                    success: function() { this.updateExistingRecord(record); } 
+                });
             },
             
             rankRelative: function(recordToRank, relativeRecord, dropPosition){
@@ -515,6 +534,29 @@
                 columns.push(me._getStateColumnCfg(state));
             }
         });
+        
+        if ( columns.length > 1 ) {
+            columns[columns.length - 1].renderer = function(value,meta,record){
+                var workproduct = record.get('__WorkProduct');
+                
+                if ( workproduct.get("ScheduleState") == "Accepted" ) {
+                    return me.workproductTemplate.apply(workproduct.getData());
+                } else {
+                    var html = [];
+                    
+                    Ext.Array.each(value, function(item){
+                        html.push(
+                            Ext.String.format(
+                                '<div id="{0}" style="height:37px;float: left;"></div>',
+                                item.ObjectID
+                            )
+                        );
+                    });
+                    
+                    return html.join('\n');
+                }
+            };
+        }
         
         return columns;
     },

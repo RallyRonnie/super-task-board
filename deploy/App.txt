@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Mon Jan 25 2016 16:17:20 GMT-0800 (PST) -->
+    <!--  Build Date: Mon Jan 25 2016 16:55:50 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Jan 25 2016 16:17:20 GMT-0800 (PST)";
-        var CHECKSUM = 104238558886;
+        var APP_BUILD_DATE = "Mon Jan 25 2016 16:55:50 GMT-0800 (PST)";
+        var CHECKSUM = 107870877742;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -455,8 +455,11 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         var field_name = field_def.dataIndex;
         if ( !Ext.isEmpty(field_name) ) {
             record.set(field_def.dataIndex, editor.getValue());
-            record.save();
-            row.updateExistingRecord(record);
+            record.save({
+                callback: function(result) {
+                    row.updateExistingRecord(result);
+                }
+            });
         }
     },
     
@@ -1350,13 +1353,29 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             // this row, replace it with an updated version
             updateExistingRecord: function(record) {
                 var version = this.get('_version') || 0;
-                version++;
+                if ( this.get('_type') == "hierarchicalrequirement" ) {
+                    version++;
+                    this.set('_version', version);
+                    
+                    return;
+                } 
+
+                // reload the workproduct for rolled up states
+                var wp = this.get('__WorkProduct');
                 
-                // just need to change another field to signal the store for listeners
-                this.set('_version', version);
+                wp.getProxy().getModel().load(wp.get('ObjectID'), {
+                    scope: this,
+                    success: function(result) {
+                        this.set('__WorkProduct', result);
+                        // need to change another field to signal the store for listeners (refresh)
+                        version++;
+                        this.set('_version', version);
+                    }
+                });
+
             },
             
-            setItemField: function(record, field_name, value) {
+            setItemField: function(record, field_name, value) {                
                 record.set(field_name, value);
                 
                 if ( record.get('_type') == 'task' && field_name !== "State" && field_name == task_state_field && !Ext.isEmpty( columnSettings )) {
@@ -1365,7 +1384,10 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                         record.set('State', setting['stateMapping']);
                     }
                 }
-                record.save();
+                record.save().then({
+                    scope: this,
+                    success: function() { this.updateExistingRecord(record); } 
+                });
             },
             
             rankRelative: function(recordToRank, relativeRecord, dropPosition){
@@ -1518,6 +1540,29 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 columns.push(me._getStateColumnCfg(state));
             }
         });
+        
+        if ( columns.length > 1 ) {
+            columns[columns.length - 1].renderer = function(value,meta,record){
+                var workproduct = record.get('__WorkProduct');
+                
+                if ( workproduct.get("ScheduleState") == "Accepted" ) {
+                    return me.workproductTemplate.apply(workproduct.getData());
+                } else {
+                    var html = [];
+                    
+                    Ext.Array.each(value, function(item){
+                        html.push(
+                            Ext.String.format(
+                                '<div id="{0}" style="height:37px;float: left;"></div>',
+                                item.ObjectID
+                            )
+                        );
+                    });
+                    
+                    return html.join('\n');
+                }
+            };
+        }
         
         return columns;
     },

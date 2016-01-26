@@ -233,8 +233,11 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         var field_name = field_def.dataIndex;
         if ( !Ext.isEmpty(field_name) ) {
             record.set(field_def.dataIndex, editor.getValue());
-            record.save();
-            row.updateExistingRecord(record);
+            record.save({
+                callback: function(result) {
+                    row.updateExistingRecord(result);
+                }
+            });
         }
     },
     
