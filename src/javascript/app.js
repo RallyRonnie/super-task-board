@@ -66,6 +66,10 @@ Ext.define("TSSuperCardboard", {
                     if (userbox){
                         if (checkbox.getValue()) {
                             userbox.setDisabled(false);
+                                                        
+                            if (!userbox.getValue()) {
+                                userbox.setValue(userbox.getRecord());
+                            }
                             this.sprint_table.applyOwnerFilter(userbox.getValue());
                         } else {
                             userbox.setDisabled(true);
@@ -82,6 +86,7 @@ Ext.define("TSSuperCardboard", {
             fieldLabel: 'Filter by Owner:',
             disabled: true,
             allowNoEntry: true,
+            allowBlank: true,
             padding: 2,
             stateId: 'com.rallydev.technicalservices.superboard.ownerfilter',
             stateful: true,
