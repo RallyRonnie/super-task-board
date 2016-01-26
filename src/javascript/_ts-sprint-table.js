@@ -249,7 +249,7 @@
         
         var task_state_field = this.taskStateField;
         var columnSettings = this.columnSettings;
-        
+                
         var fields = Ext.Array.map(columns, function(column){
             var name = column.dataIndex;
             var type = 'object';
@@ -266,8 +266,20 @@
             fields: fields,
             
             addTasks: function(tasks) {
+                        
+                // assign empty ones to first displayed state (column)
+                var columns = me.grid.getColumnCfgs();
+                var first_state = columns[1].dataIndex;
+              
+                
                 Ext.Array.each(tasks, function(task){
                     var state = task.get(task_state_field);
+                    if (Ext.isEmpty(state) && !Ext.isEmpty(first_state) ) {
+                        state = first_state;
+                        task.set(task_state_field,state);
+                        task.save();
+                    }
+                    
                     if ( Ext.isEmpty(this.get(state)) ) {
                         this.set(state, [task.getData()]);
                     } else {
@@ -791,8 +803,6 @@
     
     _createNewFor: function(target_type, parent_record, row) {
         var me = this;
-        
-
         
         Rally.data.ModelFactory.getModel({
             type: target_type,

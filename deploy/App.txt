@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Mon Jan 25 2016 18:56:19 GMT-0800 (PST) -->
+    <!--  Build Date: Mon Jan 25 2016 19:03:40 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Jan 25 2016 18:56:19 GMT-0800 (PST)";
-        var CHECKSUM = 109072070992;
+        var APP_BUILD_DATE = "Mon Jan 25 2016 19:03:40 GMT-0800 (PST)";
+        var CHECKSUM = 110138720508;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -1259,7 +1259,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         
         var task_state_field = this.taskStateField;
         var columnSettings = this.columnSettings;
-        
+                
         var fields = Ext.Array.map(columns, function(column){
             var name = column.dataIndex;
             var type = 'object';
@@ -1276,8 +1276,20 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             fields: fields,
             
             addTasks: function(tasks) {
+                        
+                // assign empty ones to first displayed state (column)
+                var columns = me.grid.getColumnCfgs();
+                var first_state = columns[1].dataIndex;
+              
+                
                 Ext.Array.each(tasks, function(task){
                     var state = task.get(task_state_field);
+                    if (Ext.isEmpty(state) && !Ext.isEmpty(first_state) ) {
+                        state = first_state;
+                        task.set(task_state_field,state);
+                        task.save();
+                    }
+                    
                     if ( Ext.isEmpty(this.get(state)) ) {
                         this.set(state, [task.getData()]);
                     } else {
@@ -1801,8 +1813,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     
     _createNewFor: function(target_type, parent_record, row) {
         var me = this;
-        
-
         
         Rally.data.ModelFactory.getModel({
             type: target_type,

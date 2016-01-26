@@ -9,6 +9,9 @@ An iteration task board with several features:
 ** If a scheduled story/defect belongs to the filtered user, show it and all of its tasks/child defects
 
 * When a story is set to accepted, it goes to the rightmost column and the tasks disappear.
+* **CAUTION**: when choosing a field for the columns that allows a null value, if you choose NOT to display the
+empty column, then any tasks/defects that have no value in that column *will be changed to have the first column's
+value*.
 
 ## Development Notes
 
