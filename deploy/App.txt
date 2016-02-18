@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Mon Jan 25 2016 19:03:40 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Feb 17 2016 17:46:27 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Jan 25 2016 19:03:40 GMT-0800 (PST)";
-        var CHECKSUM = 110138720508;
+        var APP_BUILD_DATE = "Wed Feb 17 2016 17:46:27 GMT-0800 (PST)";
+        var CHECKSUM = 110147987076;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -322,28 +322,25 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 pack: 'center'
             },
             ui: 'footer',
-            items: [
-                {
-                    xtype: 'rallybutton',
-                    itemId: 'doneButton',
-                    text: 'Delete',
-                    cls: 'primary rly-small',
-                    scope: this,
-                    disabled: false,
-                    handler: function() {
-                        this._deleteRecord();
-                        this.close();
-                    }
-                },
-                {
-                    xtype: 'rallybutton',
-                    text: 'Close',
-                    cls: 'secondary rly-small',
-                    handler: this.close,
-                    scope: this,
-                    ui: 'link'
+            items: [{
+                xtype: 'rallybutton',
+                text: 'Close',
+                cls: 'secondary rly-small',
+                handler: this.close,
+                scope: this,
+                ui: 'link'
+            },{
+                xtype: 'rallybutton',
+                itemId: 'deleteButton',
+                text: 'Delete',
+                cls: 'primary rly-small',
+                scope: this,
+                disabled: false,
+                handler: function() {
+                    this._deleteRecord();
+                    this.close();
                 }
-            ]
+            }]
         });
     },
     

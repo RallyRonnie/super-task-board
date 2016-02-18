@@ -100,28 +100,25 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
                 pack: 'center'
             },
             ui: 'footer',
-            items: [
-                {
-                    xtype: 'rallybutton',
-                    itemId: 'doneButton',
-                    text: 'Delete',
-                    cls: 'primary rly-small',
-                    scope: this,
-                    disabled: false,
-                    handler: function() {
-                        this._deleteRecord();
-                        this.close();
-                    }
-                },
-                {
-                    xtype: 'rallybutton',
-                    text: 'Close',
-                    cls: 'secondary rly-small',
-                    handler: this.close,
-                    scope: this,
-                    ui: 'link'
+            items: [{
+                xtype: 'rallybutton',
+                text: 'Close',
+                cls: 'secondary rly-small',
+                handler: this.close,
+                scope: this,
+                ui: 'link'
+            },{
+                xtype: 'rallybutton',
+                itemId: 'deleteButton',
+                text: 'Delete',
+                cls: 'primary rly-small',
+                scope: this,
+                disabled: false,
+                handler: function() {
+                    this._deleteRecord();
+                    this.close();
                 }
-            ]
+            }]
         });
     },
     
