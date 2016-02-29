@@ -416,7 +416,7 @@
     _createTaskCard: function(record_oid, record,row){
         var me = this;
         
-        var tasks = Ext.query('#' + record_oid);
+        var tasks = Ext.query('#C' + record_oid);
         
         if ( tasks.length === 0 ) {
             console.log('Cannot find display spot for task', record_oid);
@@ -586,7 +586,7 @@
                 Ext.Array.each(value, function(item){
                     html.push(
                         Ext.String.format(
-                            '<div id="{0}" style="height:37px;float: left;"></div>',
+                            '<div id="C{0}" style="height:37px;float: left;"></div>',
                             item.ObjectID
                         )
                     );

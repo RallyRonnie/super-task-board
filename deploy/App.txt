@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Sun Feb 28 2016 16:12:19 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Feb 28 2016 16:32:59 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Feb 28 2016 16:12:19 GMT-0800 (PST)";
-        var CHECKSUM = 111215203532;
+        var APP_BUILD_DATE = "Sun Feb 28 2016 16:32:59 GMT-0800 (PST)";
+        var CHECKSUM = 111222741020;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -1423,7 +1423,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     _createTaskCard: function(record_oid, record,row){
         var me = this;
         
-        var tasks = Ext.query('#' + record_oid);
+        var tasks = Ext.query('#C' + record_oid);
         
         if ( tasks.length === 0 ) {
             console.log('Cannot find display spot for task', record_oid);
@@ -1593,7 +1593,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 Ext.Array.each(value, function(item){
                     html.push(
                         Ext.String.format(
-                            '<div id="{0}" style="height:37px;float: left;"></div>',
+                            '<div id="C{0}" style="height:37px;float: left;"></div>',
                             item.ObjectID
                         )
                     );
