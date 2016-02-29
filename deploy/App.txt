@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Wed Feb 17 2016 17:46:27 GMT-0800 (PST) -->
+    <!--  Build Date: Sun Feb 28 2016 16:12:19 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Feb 17 2016 17:46:27 GMT-0800 (PST)";
-        var CHECKSUM = 110147987076;
+        var APP_BUILD_DATE = "Sun Feb 28 2016 16:12:19 GMT-0800 (PST)";
+        var CHECKSUM = 111215203532;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -1266,7 +1266,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         fields.push({name: '__Tasks',         type: 'object', defaultValue: []});
         fields.push({name: '__Defects',       type: 'object', defaultValue: []});
         fields.push({name: '_version',        type: 'number', defaultValue: 0});
-        fields.push({name: 'DragAndDropRank', type: 'string', defaultValue: 'x'});
+        fields.push({name: 'DragAndDropRank', type: 'string'});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -1426,16 +1426,17 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         var tasks = Ext.query('#' + record_oid);
         
         if ( tasks.length === 0 ) {
-            console.log('Cannot find card for task', record_oid);
+            console.log('Cannot find display spot for task', record_oid);
         } else {
             var card_element = Ext.get(tasks[0]);
-
-            if ( this.down('#Child' + record_oid) ) {
-                this.down('#Child' + record_oid).destroy();
+            card_element.setHTML('');
+            
+            if ( this.down('#child_' + record_oid) ) {
+                this.down('#child_' + record_oid).destroy();
             }
             var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
                 record: record,
-                itemId: 'Child' + record_oid,
+                itemId: 'child_' + record_oid,
                 renderTo: card_element
             });
             
@@ -1735,7 +1736,9 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         
         // sort because the custom store doesn't seem to do it
         var sorted_workproducts = Ext.Array.sort(workproducts, function(a,b){
-            return a.get('DragAndDropRank') > b.get('DragAndDropRank');
+            var a_is_lower  = ( a.get('DragAndDropRank') < b.get('DragAndDropRank') );
+            var a_is_higher = ( a.get('DragAndDropRank') > b.get('DragAndDropRank') );
+            return a_is_lower ? -1 : ( a_is_higher) ? 1 : 0;
         });
         
         Ext.Array.each( sorted_workproducts, function(workproduct){
@@ -1751,6 +1754,8 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             
             rows.push(row);
         });
+        
+        console.log('rows:', rows);
         
         return rows;
     },
@@ -2191,10 +2196,17 @@ Ext.define("TSSuperCardboard", {
                     if ( iteration ) {
                         created_record.set('Iteration', { _ref: iteration.get('_ref') } );
                         created_record.save({
-                            callback: function(result, operation) {
-                                if(operation.wasSuccessful()) {
-                                    me.updateData();
-                                }
+                            callback: function(saved_record, operation) {
+                                saved_record.save({
+                                    params: {
+                                        rankTo: 'BOTTOM'
+                                    },
+                                    callback: function(result) {
+                                        if(operation.wasSuccessful()) {
+                                            me.updateData();
+                                        }
+                                    }
+                                });
                             }
                         });
                     }

@@ -259,7 +259,7 @@
         fields.push({name: '__Tasks',         type: 'object', defaultValue: []});
         fields.push({name: '__Defects',       type: 'object', defaultValue: []});
         fields.push({name: '_version',        type: 'number', defaultValue: 0});
-        fields.push({name: 'DragAndDropRank', type: 'string', defaultValue: 'x'});
+        fields.push({name: 'DragAndDropRank', type: 'string'});
         
         Ext.define('TSTableRow', {
             extend: 'Ext.data.Model',
@@ -419,16 +419,17 @@
         var tasks = Ext.query('#' + record_oid);
         
         if ( tasks.length === 0 ) {
-            console.log('Cannot find card for task', record_oid);
+            console.log('Cannot find display spot for task', record_oid);
         } else {
             var card_element = Ext.get(tasks[0]);
-
-            if ( this.down('#Child' + record_oid) ) {
-                this.down('#Child' + record_oid).destroy();
+            card_element.setHTML('');
+            
+            if ( this.down('#child_' + record_oid) ) {
+                this.down('#child_' + record_oid).destroy();
             }
             var card = Ext.create('Rally.technicalservices.sprintboard.TaskCard',{
                 record: record,
-                itemId: 'Child' + record_oid,
+                itemId: 'child_' + record_oid,
                 renderTo: card_element
             });
             
@@ -728,7 +729,9 @@
         
         // sort because the custom store doesn't seem to do it
         var sorted_workproducts = Ext.Array.sort(workproducts, function(a,b){
-            return a.get('DragAndDropRank') > b.get('DragAndDropRank');
+            var a_is_lower  = ( a.get('DragAndDropRank') < b.get('DragAndDropRank') );
+            var a_is_higher = ( a.get('DragAndDropRank') > b.get('DragAndDropRank') );
+            return a_is_lower ? -1 : ( a_is_higher) ? 1 : 0;
         });
         
         Ext.Array.each( sorted_workproducts, function(workproduct){
@@ -744,6 +747,8 @@
             
             rows.push(row);
         });
+        
+        console.log('rows:', rows);
         
         return rows;
     },

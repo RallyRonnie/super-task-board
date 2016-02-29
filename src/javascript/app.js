@@ -42,10 +42,17 @@ Ext.define("TSSuperCardboard", {
                     if ( iteration ) {
                         created_record.set('Iteration', { _ref: iteration.get('_ref') } );
                         created_record.save({
-                            callback: function(result, operation) {
-                                if(operation.wasSuccessful()) {
-                                    me.updateData();
-                                }
+                            callback: function(saved_record, operation) {
+                                saved_record.save({
+                                    params: {
+                                        rankTo: 'BOTTOM'
+                                    },
+                                    callback: function(result) {
+                                        if(operation.wasSuccessful()) {
+                                            me.updateData();
+                                        }
+                                    }
+                                });
                             }
                         });
                     }
