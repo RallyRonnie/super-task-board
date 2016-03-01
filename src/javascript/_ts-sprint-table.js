@@ -560,7 +560,7 @@
                     Ext.Array.each(value, function(item){
                         html.push(
                             Ext.String.format(
-                                '<div id="{0}" style="height:37px;float: left;"></div>',
+                                '<div id="C{0}" style="height:37px;float: left;"></div>',
                                 item.ObjectID
                             )
                         );
