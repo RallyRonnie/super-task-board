@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015 Rally Software Development Corp.  All Rights Reserved. -->
-    <!--  Build Date: Mon Feb 29 2016 16:08:46 GMT-0800 (PST) -->
+    <!--  Build Date: Mon Feb 29 2016 16:13:42 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Feb 29 2016 16:08:46 GMT-0800 (PST)";
-        var CHECKSUM = 111226465419;
+        var APP_BUILD_DATE = "Mon Feb 29 2016 16:13:42 GMT-0800 (PST)";
+        var CHECKSUM = 111976132988;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -1841,6 +1841,11 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 
                 item.save({
                     callback: function(record,operation) {
+                        if ( operation.error && operation.error.errors && operation.error.errors.length > 0 ) {
+                            Ext.Msg.alert("Problem creating " + target_type, operation.error.errors.join(' '));
+                            return;
+                        }
+
                         if ( target_type == "task" ) {
                             row.addTasks([record]);
                         } else {

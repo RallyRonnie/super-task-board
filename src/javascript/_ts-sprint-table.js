@@ -834,6 +834,11 @@
                 
                 item.save({
                     callback: function(record,operation) {
+                        if ( operation.error && operation.error.errors && operation.error.errors.length > 0 ) {
+                            Ext.Msg.alert("Problem creating " + target_type, operation.error.errors.join(' '));
+                            return;
+                        }
+
                         if ( target_type == "task" ) {
                             row.addTasks([record]);
                         } else {
