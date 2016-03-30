@@ -60,58 +60,83 @@ Ext.define("TSSuperCardboard", {
             }
         });
         
-        container.add({
-            xtype:'rallycheckboxfield',
-            stateId: 'com.rallydev.technicalservices.superboard.showownerfilter',
-            stateful: true,
-            stateEvents: ['change'],
-            padding: 2,
-            listeners: {
-                scope: this,
-                change: function(checkbox) {
-                    var userbox = this.down('rallyusersearchcombobox');
-                    if (userbox){
-                        if (checkbox.getValue()) {
-                            userbox.setDisabled(false);
-                                                        
-                            if (!userbox.getValue()) {
-                                userbox.setValue(userbox.getRecord());
-                            }
-                            this.sprint_table.applyOwnerFilter(userbox.getValue());
-                        } else {
-                            userbox.setDisabled(true);
-                            this.sprint_table.applyOwnerFilter('all');
-                        }
-                    }
-                }
-            }
-        });
         
         container.add({
-            xtype: 'rallyusersearchcombobox',
-            project: this.getContext().getProject()._ref,
-            fieldLabel: 'Filter by Owner:',
-            disabled: true,
-            allowNoEntry: true,
-            allowBlank: true,
-            padding: 2,
-            stateId: 'com.rallydev.technicalservices.superboard.ownerfilter',
-            stateful: true,
-            stateEvents: ['select','change'],
+            xtype:'tsadvancedfilter',
+//            stateful: true,
+//            stateId: 'super-task-board-advanced-filter',
+//            stateEvents: ['filterselected'],
             listeners: {
                 scope: this,
-                change: function(userbox) {
-                    if ( this.down('tssprinttable') ) {
-                        this.down('tssprinttable').applyOwnerFilter(userbox.getValue());
+                filterselected: function(advanced_filter, filters) {
+                    var table = this.down('tssprinttable');
+                    
+                    if ( Ext.isEmpty(table) ) {
+                        return;
                     }
-                },
-                setValue: function(userbox) {
-                    if ( this.down('tssprinttable') ) {
-                        this.down('tssprinttable').applyOwnerFilter(userbox.getValue());
+                    
+                    if ( ! Ext.isEmpty(filters) ) {
+                        console.log('Found Filters', filters.toString());
+                        this.down('tssprinttable').applyFilters(filters);
+                    } else {
+                        console.log('No filters');
+                        this.down('tssprinttable').applyFilters(null);
                     }
                 }
             }
         });
+//        container.add({
+//            xtype:'rallycheckboxfield',
+//            stateId: 'com.rallydev.technicalservices.superboard.showownerfilter',
+//            stateful: true,
+//            stateEvents: ['change'],
+//            padding: 2,
+//            listeners: {
+//                scope: this,
+//                change: function(checkbox) {
+//                    var userbox = this.down('rallyusersearchcombobox');
+//                    if (userbox){
+//                        if (checkbox.getValue()) {
+//                            userbox.setDisabled(false);
+//                                                        
+//                            if (!userbox.getValue()) {
+//                                userbox.setValue(userbox.getRecord());
+//                            }
+//                            this.sprint_table.applyOwnerFilter(userbox.getValue());
+//                        } else {
+//                            userbox.setDisabled(true);
+//                            this.sprint_table.applyOwnerFilter('all');
+//                        }
+//                    }
+//                }
+//            }
+//        });
+//        
+//        container.add({
+//            xtype: 'rallyusersearchcombobox',
+//            project: this.getContext().getProject()._ref,
+//            fieldLabel: 'Filter by Owner:',
+//            disabled: true,
+//            allowNoEntry: true,
+//            allowBlank: true,
+//            padding: 2,
+//            stateId: 'com.rallydev.technicalservices.superboard.ownerfilter',
+//            stateful: true,
+//            stateEvents: ['select','change'],
+//            listeners: {
+//                scope: this,
+//                change: function(userbox) {
+//                    if ( this.down('tssprinttable') ) {
+//                        this.down('tssprinttable').applyOwnerFilter(userbox.getValue());
+//                    }
+//                },
+//                setValue: function(userbox) {
+//                    if ( this.down('tssprinttable') ) {
+//                        this.down('tssprinttable').applyOwnerFilter(userbox.getValue());
+//                    }
+//                }
+//            }
+//        });
         
         container.add({
             itemId:'spacer',

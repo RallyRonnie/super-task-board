@@ -124,6 +124,11 @@
         this._loadCards();
     },
     
+    applyFilters: function(filters) {
+        this.filters = filters;
+        this._makeGrid();
+    },
+    
     applyOwnerFilter: function(user_ref) {
         this.userFilter = user_ref;
         
@@ -222,14 +227,21 @@
             iteration_filter = [{property:'Iteration.Name', value:this.iteration.get('Name')}];
         }
         
-        var store = Ext.create('Rally.data.wsapi.Store',{
+        var store_config = {
             model: artifact_type,
             context: { projectScopeDown: false, projectScopeUp: false },
             sorters: [{property:'DragAndDropRank',direction:'ASC'}],
             filters: iteration_filter,
             fetch: ['FormattedID', 'Name', 'ObjectID','Owner','PlanEstimate',
                 'Blocked','Owner','BlockedReason','Description','DragAndDropRank','ScheduleState']
-        });
+        };
+        
+        if ( !Ext.isEmpty(this.filters) ) {
+            store_config.filters = this.filters;
+        }
+        
+        
+        var store = Ext.create('Rally.data.wsapi.Store',store_config);
                 
         store.load({
             scope: this,
