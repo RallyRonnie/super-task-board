@@ -60,20 +60,19 @@ Ext.define("TSSuperCardboard", {
             }
         });
         
-        
         container.add({
             xtype:'tsadvancedfilter',
-//            stateful: true,
-//            stateId: 'super-task-board-advanced-filter',
-//            stateEvents: ['filterselected'],
+            stateful: true,
+            stateId: 'super-task-board-advanced-quick-filter',
+            allowAdvancedFilters: false,
+            allowQuickFilters: true,
+            stateEvents: ['filterselected'],
             listeners: {
                 scope: this,
                 filterselected: function(advanced_filter, filters) {
                     var table = this.down('tssprinttable');
                     
-                    if ( Ext.isEmpty(table) ) {
-                        return;
-                    }
+                    if ( Ext.isEmpty(table) ) { return; }
                     
                     if ( ! Ext.isEmpty(filters) ) {
                         console.log('Found Filters', filters.toString());
@@ -85,6 +84,31 @@ Ext.define("TSSuperCardboard", {
                 }
             }
         });
+        
+//        container.add({
+//            xtype:'tsadvancedfilter',
+////            stateful: true,
+////            stateId: 'super-task-board-advanced-filter',
+////            stateEvents: ['filterselected'],
+//            listeners: {
+//                scope: this,
+//                filterselected: function(advanced_filter, filters) {
+//                    var table = this.down('tssprinttable');
+//                    
+//                    if ( Ext.isEmpty(table) ) {
+//                        return;
+//                    }
+//                    
+//                    if ( ! Ext.isEmpty(filters) ) {
+//                        console.log('Found Filters', filters.toString());
+//                        this.down('tssprinttable').applyFilters(filters);
+//                    } else {
+//                        console.log('No filters');
+//                        this.down('tssprinttable').applyFilters(null);
+//                    }
+//                }
+//            }
+//        });
 //        container.add({
 //            xtype:'rallycheckboxfield',
 //            stateId: 'com.rallydev.technicalservices.superboard.showownerfilter',
@@ -179,17 +203,25 @@ Ext.define("TSSuperCardboard", {
             layout: 'fit',
             listeners: {
                 gridReady: function() {
-                    var checkbox = me.down('rallycheckboxfield');
-                    var userbox  = me.down('rallyusersearchcombobox');
-                    
-                    if ( checkbox && checkbox.getValue() ) {
-                        userbox.setDisabled(false);
-                        me.sprint_table.applyOwnerFilter(userbox.getValue());
-                    }
                     me.setLoading(false);
                 }
             }
         });
+        
+        this.sprint_table.on('gridReady', function() {
+            var checkbox = me.down('rallycheckboxfield');
+            var userbox  = me.down('rallyusersearchcombobox');
+            var advanced_filter = me.down('tsadvancedfilter');
+            
+            if ( checkbox && checkbox.getValue() ) {
+                userbox.setDisabled(false);
+                me.sprint_table.applyOwnerFilter(userbox.getValue());
+            }
+            
+            if ( advanced_filter && advanced_filter.getFilters() ) {
+                me.sprint_table.applyFilters(advanced_filter.getFilters());
+            }
+        }, this, { single: true });
     },
     
     getOptions: function() {

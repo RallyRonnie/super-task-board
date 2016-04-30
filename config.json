@@ -1,7 +1,6 @@
 {
     "name": "TS Super Cardboard",
     "className": "TSSuperCardboard",
-    "server": "https://us1.rallydev.com",
-    "sdk": "2.0",
+    "sdk": "2.1",
     "apiKey": "_PUT_APIKEY_HERE_"
 }

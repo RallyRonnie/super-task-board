@@ -3,14 +3,14 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Mar 29 2016 18:33:03 GMT-0700 (PDT) -->
+    <!--  Build Date: Fri Apr 29 2016 20:26:17 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Mar 29 2016 18:33:03 GMT-0700 (PDT)";
-        var CHECKSUM = 165651342114;
+        var APP_BUILD_DATE = "Fri Apr 29 2016 20:26:17 GMT-0700 (PDT)";
+        var CHECKSUM = 233386621587;
     </script>
     
-    <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
+    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
 
     <script type="text/javascript">
         Rally.onReady(function() {
@@ -218,6 +218,454 @@ Ext.define('TSUtilities',{
             }
         });
         return deferred.promise;
+    }
+});
+
+Ext.define('CA.techservices.filter.ArtifactSearchField', {
+    alias: 'widget.tsartifactsearchfield',
+    extend: 'Rally.ui.TextField',
+    requires: [
+        'Rally.data.wsapi.Filter'
+    ],
+
+    fieldLabel: 'Search',
+    emptyText: 'Text Search...',
+
+    config: {
+        model: undefined,
+        context: undefined,
+        fieldLabel: null
+    },
+
+    _isValidField: function(model, fieldNames) {
+        var validFields = _.pluck(model.getFields(), 'name');
+        return fieldNames.every(function(fieldName) {
+            return _.contains(validFields, fieldName);
+        });
+    },
+    
+    getFilter: function() {
+        var value = this.lastValue;
+        if (!Ext.isEmpty(value)) {
+            var filters = [],
+                models = [this.model];
+
+            var onlyNumbers = new RegExp('^(\\d+)$');
+            if (onlyNumbers.test(value) && this._isValidField(this.model, ['FormattedID'])) {
+                filters.push({
+                    property: 'FormattedID',
+                    operator: 'contains',
+                    value: value
+                });
+            }
+
+            _.each(models, function(model) {
+                var prefixPlusNumbers = new RegExp(Ext.String.format('^({0}\\d+)$', model.idPrefix), 'i');
+                if (prefixPlusNumbers.test(value) && model.isArtifact()) {
+                    filters.push(
+                        Rally.data.wsapi.Filter.and([
+                            {
+                                property: 'TypeDefOid',
+                                operator: '=',
+                                value: model.typeDefOid
+                            },
+                            {
+                                property: 'FormattedID',
+                                operator: 'contains',
+                                value: value
+                            }
+                        ])
+                    );
+                } else if (prefixPlusNumbers.test(value) && this._isValidField(model, ['FormattedID'])) {
+                    filters.push({
+                        property: 'FormattedID',
+                        operator: 'contains',
+                        value: value
+                    });
+                }
+            }, this);
+
+            if (this._isValidField(this.model, ['Name'])) {
+                filters.push({
+                    property: 'Name',
+                    operator: 'contains',
+                    value: value
+                });
+            }
+
+            if (this._isValidField(this.model, ['Description'])) {
+                filters.push({
+                    property: 'Description',
+                    operator: 'contains',
+                    value: value
+                });
+            }
+
+            return Rally.data.wsapi.Filter.or(filters);
+        }
+    }
+});
+
+Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
+    extend: 'Ext.container.Container',
+    alias: 'widget.tsadvancedfilterquickrow',
+    
+    layout: 'hbox',
+    
+    items: [
+        {
+            xtype: 'container',
+            itemId: 'filter_box',
+            flex: 1,
+            layout: 'hbox',
+            defaults: {
+                margin: '0 5 0 0'
+            }
+        },
+        {
+            xtype:'container',
+            margin: 15,
+            items: [
+                {
+                    xtype       : 'rallybutton',
+                    itemId      : 'add_button',
+                    disabled    : false,
+                    text        : '+ Add Filter'
+                }
+            ]
+        }
+    ],
+    
+    config: {
+        model: 'UserStory',
+        filter: null,
+        addQuickFilterConfig: {
+            whiteListFields: ['ArtifactSearch']
+        },
+        fields: [],
+        initialValues: {}
+    },
+
+    initComponent: function() {
+        this.callParent(arguments);
+        
+        this.addEvents(
+            /**
+             * @event filteradd
+             * Fires when a new filter box is added
+             * @param {CA.technicalservices.filter.AdvancedFilterQuickRow} this the quick filter row
+             * @param {} the filter box
+             */
+            'filteradd',
+            
+            /**
+             * @event quickfilterchange
+             * @param {CA.technicalservices.filter.AdvancedFilterQuickRow} this the quick filter row
+             * @param [{Rally.data.wsapi.Filter}] wsapiFilters the filters selected
+             */
+            'quickfilterchange'
+        );
+//        
+//        
+        this.down('#add_button').on('click', this._showQuickFilterPopover, this);
+//        
+        if ( Ext.isString(this.model) ) {
+            this._getModel(this.model).then({
+                scope: this,
+                success: function(model) {
+                    this.model = model;
+                    this._displaySelectors();
+                },
+                failure: function(msg) {
+                    Ext.Msg.alert("Problem loading model for filter", msg);
+                }
+            });
+        } else {
+            this._displaySelectors();
+        }
+    },
+    
+    _displaySelectors: function() {
+        var model = this.model,
+            me = this;
+            
+        console.log("--", this.initialValues);
+        Ext.Array.each(Ext.Object.getKeys(this.initialValues), function(field_name, idx){
+            var newItem = me._createField(idx+1, field_name, me.initialValues);
+            me.fields.push(newItem);
+            me.down('#filter_box').insert(idx+1, newItem);
+        });
+
+    },
+    
+    _changeFieldValue: function(field) {
+        this.fireEvent('quickfilterchange', this, this.getFilters());
+    },
+    
+    _getModel: function(model_name) {
+        var deferred = Ext.create('Deft.Deferred');
+        
+        Rally.data.ModelFactory.getModel({
+            type: model_name,
+            success: function(model) {
+                deferred.resolve(model);
+            },
+            failure: function(msg) {
+                deferred.reject(msg);
+            }
+        });
+        return deferred.promise;
+    },
+    
+    _showQuickFilterPopover: function(button) {
+        var addQuickFilterConfig = Ext.clone(this.addQuickFilterConfig);
+            var blackList =  _.map(this.fields, 'name');
+
+            if (addQuickFilterConfig && addQuickFilterConfig.whiteListFields) {
+                addQuickFilterConfig.whiteListFields = _.reject(this.addQuickFilterConfig.whiteListFields, function(field){
+                    return _.contains(blackList, field);
+                });
+            }
+            
+            this.addQuickFilterPopover = Ext.create('Rally.ui.popover.FieldPopover', {
+                target: button.getEl(),
+                placement: ['bottom', 'top', 'left', 'right'],
+                fieldComboBoxConfig: _.merge({
+                    model: this.model,
+                    context: this.context || Rally.getApp().getContext(),
+                    emptyText: 'Search filters...',
+                    additionalFields: [
+                        {
+                            name: 'ArtifactSearch',
+                            displayName: 'Search'
+                        }
+                    ],
+                    blackListFields: blackList,
+                    _getModelNamesForDuplicates: function(field, fields) {
+                        var fieldCounts = _.countBy(fields, 'displayName');
+                        
+                        // TODO figure out what to do about using multiple record types
+//                        if (fieldCounts[field.displayName] > 1) {
+//                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
+//                        }
+                        return '';
+                    },
+                    listeners: {
+                        select: function(field, value) {
+                            var fieldSelected = value[0].raw;
+                            
+                            this.addQuickFilterPopover.close();
+                            this._onAddQuickFilterSelect(fieldSelected);
+                        },
+                        destroy: function(){
+                            delete this.addQuickFilterPopover;
+                        },
+                        scope: this
+                    }
+                }, addQuickFilterConfig, function(a, b) {
+                    if (_.isArray(a)) {
+                        return a.concat(b);
+                    }
+                })
+            });
+    },
+
+    _onAddQuickFilterSelect: function(field) {
+        var index = this.fields.length;
+        var newItem = this._createField(index + 1, field);
+        this.fields.push(newItem);
+        this.down('#filter_box').insert(index, newItem);
+    },
+
+
+    _createField: function(filterIndex, field, initialValues) {
+        var fieldName = field.name || field,
+            modelField = this.model.getField(fieldName),
+            fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
+            initialValue = initialValues && initialValues[fieldConfig.name] && initialValues[fieldConfig.name].rawValue;
+
+        if (modelField && modelField.isDate() && initialValue) {
+            initialValue = Rally.util.DateTime.fromIsoString(initialValue);
+        }
+
+        initialValue = Rally.ui.inlinefilter.FilterFieldFactory.getInitialValueForLegacyFilter(fieldConfig, initialValue);
+        fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfigForLegacyFilter(fieldConfig, initialValue);
+
+        Ext.applyIf(fieldConfig, {
+            allowClear: true
+        });
+        
+        Ext.merge(fieldConfig, {
+            autoExpand: this.autoExpand,
+            allowBlank: true,
+            clearText: '-- Clear Filter --',
+            hideLabel: false,
+            beforeLabelTextTpl: [
+                '<span class="filter-index">{[this.getFilterIndex()]}</span>',
+                {
+                    filterIndex: filterIndex,
+                    displayIndex: this.isCustomMatchType(),
+                    getFilterIndex: function() {
+                        return this.displayIndex ? Ext.String.format('({0}) ', this.filterIndex) : '';
+                    }
+                }
+            ],
+            fieldLabel: '<span class="remove-quick-filter-icon icon-cross"></span>',
+            labelAlign: 'top',
+            labelSeparator: '',
+            enableKeyEvents: true,
+           // margin: 0,
+            cls: this.isCustomMatchType() ? 'indexed-field' : '',
+            model: this.model,
+            context: this.context,
+            operator: this._getOperatorForModelField(modelField),
+            //afterSubTpl: ' <span class="remove-quick-filter-icon icon-cross"></span>',
+            renderSelectors: {
+                removeIcon: '.remove-quick-filter-icon'
+            },
+            listeners: {
+                afterrender: function (field) {
+                    field.removeIcon.on('click', _.partial(this._removeQuickFilter, field), this);
+                },
+                change: this._changeFieldValue,
+                scope: this
+            }
+        });
+
+        if (!_.isUndefined(initialValue)) {
+            Ext.merge(fieldConfig, {
+                value: initialValue
+            });
+        }
+
+        if (_.isPlainObject(field)) {
+            Ext.apply(fieldConfig, field);
+        }
+
+        if (filterIndex === 1) {
+            fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
+        }
+
+        if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
+            Ext.merge(fieldConfig, {
+                autoSelect: true,
+                listeners: {
+                    //select: this._applyFilters,
+                    scope: this
+                }
+            });
+        } else {
+            Ext.merge(fieldConfig, {
+                listeners: {
+                    //change: this._applyFilters,
+                    scope: this
+                }
+            });
+        }
+
+        return Ext.widget(fieldConfig);
+    },
+    
+    isCustomMatchType: function() {
+        return this.matchType === 'CUSTOM';
+    },
+
+    _getOperatorForModelField: function(modelField) {
+        var operator = '=';
+
+        if (modelField && modelField.isCollection && modelField.isCollection()) {
+            operator = 'contains';
+        }
+
+        return operator;
+    },
+    
+    _removeQuickFilter: function(field) {
+        var arrayIndex = field.beforeLabelTextTpl.filterIndex - 1;
+        this.fields[arrayIndex] && this.fields[arrayIndex].destroy();
+        this.fields.splice(arrayIndex, 1);
+        this.updateFilterIndices();
+        this.fireEvent('quickfilterchange', this, this.getFilters());
+
+    },
+    
+    updateFilterIndices: function(matchType) {
+        this.matchType = matchType || this.matchType;
+
+        _.each(this.fields, function (field, index) {
+            field.beforeLabelTextTpl.displayIndex = this.isCustomMatchType();
+            field.beforeLabelTextTpl.filterIndex = index + 1;
+            field.beforeLabelTextTpl.overwrite(field.labelEl.down('.filter-index'));
+            if (this.isCustomMatchType()) {
+                field.addCls('indexed-field');
+            } else {
+                field.removeCls('indexed-field');
+            }
+            if (Ext.isIE10m && field.inputEl) {
+                field.setValue(field.getValue());
+            }
+        }, this);
+    },
+
+    _shouldApplyFiltersOnSelect: function(fieldConfig) {
+        var field = this.model.getField(fieldConfig.name),
+            attributeDefinition = field && field.attributeDefinition;
+
+        return attributeDefinition &&
+            (attributeDefinition.Constrained || attributeDefinition.AttributeType === 'OBJECT') &&
+            !fieldConfig.multiSelect;
+    },
+
+    getFilters: function() {
+        var filters = [];
+        _.each(this.fields, function(field, index) {
+            if (field.name === 'ModelType') {
+                return;
+            }
+
+            if (!Ext.isEmpty(field.lastValue) && !field.hasActiveError()) {
+
+                var lastValue = field.lastValue;
+
+                var isRefUri = Rally.util.Ref.isRefUri(lastValue);
+                var isRefOid = _.isNumber(Rally.util.Ref.getOidFromRef(lastValue));
+                if (isRefUri && isRefOid && field.valueField === '_ref' && field.noEntryValue !== lastValue) {
+                    var record = field.getRecord();
+                    if (record) {
+                        var uuidRef = record.get('_uuidRef');
+                        if (uuidRef) {
+                            lastValue = uuidRef;
+                        }
+                    }
+                }
+
+                var filter = _.isFunction(field.getFilter) ? field.getFilter() : Rally.data.wsapi.Filter.fromExtFilter({
+                    property: field.name,
+                    operator: field.operator,
+                    value: lastValue
+                });
+
+                if(filter) {
+
+                    if (field.allowNoEntry && field.noEntryValue === lastValue) {
+                        filter.value = null;
+                    }
+
+                    Ext.apply(filter, {
+                        name: field.name,
+                        rawValue: lastValue,
+                        filterIndex: index + 1
+                    });
+
+                    filters.push(filter);
+                }
+            }
+        }, this);
+        
+        var filter_hash = {};
+        Ext.Array.each(filters, function(filter){ filter_hash[filter.name] = filter; });
+        
+        return Ext.Object.getValues(filter_hash);
     }
 });
 Ext.define('CA.technicalservices.filter.AdvancedFilterRow',{
@@ -583,16 +1031,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
             items: [
                 {
                     xtype       : 'container',
-                    itemId      : 'filterBox',
-                    margin      : 5,
-                    padding     : 5,
-                    flex        : 1
+                    itemId      : 'filterBox'
                 },
                 {
                     xtype       : 'container',
                     itemId      : 'selectorBox',
-                    margin      : 5,
-                    padding     : 5,
                     flex        : 1
                 }
             ]
@@ -601,28 +1044,39 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     
     rows: [],
     filters: [],
+    quickFilters: [],
     operator: 'and',
     
     config: {
+        /**
+         *  {Boolean} true to allow user to show/add advanced filter rows
+         */
+        allowAdvancedFilters: true,
         
+        allowQuickFilters: true
     },
 
     /**
-     * Gets the current state of the object. By default this function returns null,
-     * it should be overridden in subclasses to implement methods for getting the state.
+     * Gets the current state of the object. 
      * @return {Object} The current state
      */
     getState: function(){
         return { 
             filters: this._getFilterConfigs(),
-            operator: this.operator
+            operator: this.operator,
+            quickFilterMap: this._getQuickFilterConfig(),
+            quickFilters: this.quickFilters
         };
     },
     
-
     constructor: function(config) {
         this.mergeConfig(config);
         this.callParent([this.config]);
+        this._setButton();
+        this.down('#filterButton').on('click', this._showHideFilters, this);
+        if ( this.quickFilters && this.quickFilters.length > 0 ) {
+            this.fireEvent('filterselected', this, this.quickFilters);
+        }
     },
 
     initComponent: function() {
@@ -637,8 +1091,6 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
              */
             'filterselected'
         );
-        
-        this.down('#filterButton').on('click', this._showHideFilters, this);
     },
     
     _showHideFilters: function(button) {
@@ -667,41 +1119,65 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         this.rows = Ext.ComponentQuery.query('tsadvancedfilterrow');
     },
     
+    _addQuickRow: function() {
+        
+        this.down('#filterBox').add({
+            xtype:'tsadvancedfilterquickrow',
+            initialValues: this.quickFilterMap,
+            listeners: {
+                scope: this,
+                quickfilterchange: function(row, filters) {
+                    console.log('filters:', filters);
+                    this.quickFilters = filters;
+                    this.quickFilterMap = this._getQuickFilterConfig();
+                    this._setButton();
+                    this.fireEvent('filterselected', this, filters);
+                }
+            }
+        });
+    },
+    
     _showFilters: function() {
         var filter_box = this.down('#filterBox');
         filter_box.removeAll();
         
-        if ( this.filters.length === 0 ) {
-            this._addRow();
-        } else {
-            Ext.Array.each(this.filters, function(filter){
-                this._addRow(filter);
-            }, this);
+        if ( this.allowQuickFilters ) {
+            this._addQuickRow();
         }
         
-        var selector_box = this.down('#selectorBox');
-        selector_box.removeAll();
-        var store = Ext.create('Rally.data.custom.Store',{
-            data: [
-                {name:'All', value: 'and'},
-                {name:'Any', value: 'or'}
-            ]
-        });
-        
-        selector_box.add({
-            xtype: 'rallycombobox',
-            displayField: 'name',
-            valueField: 'value',
-            store: store,
-            value: this.operator,
-            listeners: {
-                scope: this,
-                change: function(cb) {
-                    this.operator = cb.getValue();
-                    this._setFilters();
-                }
+        if ( this.allowAdvancedFilters ) {
+            if ( this.filters.length === 0 ) {
+                this._addRow();
+            } else {
+                Ext.Array.each(this.filters, function(filter){
+                    this._addRow(filter);
+                }, this);
             }
-        });
+            
+            var selector_box = this.down('#selectorBox');
+            selector_box.removeAll();
+            var store = Ext.create('Rally.data.custom.Store',{
+                data: [
+                    {name:'All', value: 'and'},
+                    {name:'Any', value: 'or'}
+                ]
+            });
+            
+            selector_box.add({
+                xtype: 'rallycombobox',
+                displayField: 'name',
+                valueField: 'value',
+                store: store,
+                value: this.operator,
+                listeners: {
+                    scope: this,
+                    change: function(cb) {
+                        this.operator = cb.getValue();
+                        this._setFilters();
+                    }
+                }
+            });
+        }
         
     },
     
@@ -739,8 +1215,13 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     _setButton: function() {
         var button = this.down('#filterButton');
         
-        if ( this.filters && this.filters.length > 0 ) {
-            button.setText('<span class="icon-filter"> </span> (' + this.filters.length + ')');
+        if ( ( this.filters && this.filters.length > 0 ) || ( this.quickFilters && this.quickFilters.length > 0 ) ) {
+            var count = this.filters && this.filters.length || 0;
+            if ( count === 0 ) {
+                count = this.quickFilters && this.quickFilters.length;
+            }
+            
+            button.setText('<span class="icon-filter"> </span> (' + count + ')');
             button.addCls('reverse');
             return;
         }
@@ -753,6 +1234,18 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         return Ext.Array.map(this.filters, function(filter) {
             return filter.config;
         });
+    },
+    
+    getFilters: function() {
+        return this.quickFilters || [];
+    },
+    
+    _getQuickFilterConfig: function() {
+        var filter_map = {};
+        Ext.Array.each(this.quickFilters, function(filter) {
+            filter_map[filter.name] = filter;
+        });
+        return filter_map;
     }
     
 });
@@ -2767,20 +3260,19 @@ Ext.define("TSSuperCardboard", {
             }
         });
         
-        
         container.add({
             xtype:'tsadvancedfilter',
-//            stateful: true,
-//            stateId: 'super-task-board-advanced-filter',
-//            stateEvents: ['filterselected'],
+            stateful: true,
+            stateId: 'super-task-board-advanced-quick-filter',
+            allowAdvancedFilters: false,
+            allowQuickFilters: true,
+            stateEvents: ['filterselected'],
             listeners: {
                 scope: this,
                 filterselected: function(advanced_filter, filters) {
                     var table = this.down('tssprinttable');
                     
-                    if ( Ext.isEmpty(table) ) {
-                        return;
-                    }
+                    if ( Ext.isEmpty(table) ) { return; }
                     
                     if ( ! Ext.isEmpty(filters) ) {
                         console.log('Found Filters', filters.toString());
@@ -2792,6 +3284,31 @@ Ext.define("TSSuperCardboard", {
                 }
             }
         });
+        
+//        container.add({
+//            xtype:'tsadvancedfilter',
+////            stateful: true,
+////            stateId: 'super-task-board-advanced-filter',
+////            stateEvents: ['filterselected'],
+//            listeners: {
+//                scope: this,
+//                filterselected: function(advanced_filter, filters) {
+//                    var table = this.down('tssprinttable');
+//                    
+//                    if ( Ext.isEmpty(table) ) {
+//                        return;
+//                    }
+//                    
+//                    if ( ! Ext.isEmpty(filters) ) {
+//                        console.log('Found Filters', filters.toString());
+//                        this.down('tssprinttable').applyFilters(filters);
+//                    } else {
+//                        console.log('No filters');
+//                        this.down('tssprinttable').applyFilters(null);
+//                    }
+//                }
+//            }
+//        });
 //        container.add({
 //            xtype:'rallycheckboxfield',
 //            stateId: 'com.rallydev.technicalservices.superboard.showownerfilter',
@@ -2886,17 +3403,25 @@ Ext.define("TSSuperCardboard", {
             layout: 'fit',
             listeners: {
                 gridReady: function() {
-                    var checkbox = me.down('rallycheckboxfield');
-                    var userbox  = me.down('rallyusersearchcombobox');
-                    
-                    if ( checkbox && checkbox.getValue() ) {
-                        userbox.setDisabled(false);
-                        me.sprint_table.applyOwnerFilter(userbox.getValue());
-                    }
                     me.setLoading(false);
                 }
             }
         });
+        
+        this.sprint_table.on('gridReady', function() {
+            var checkbox = me.down('rallycheckboxfield');
+            var userbox  = me.down('rallyusersearchcombobox');
+            var advanced_filter = me.down('tsadvancedfilter');
+            
+            if ( checkbox && checkbox.getValue() ) {
+                userbox.setDisabled(false);
+                me.sprint_table.applyOwnerFilter(userbox.getValue());
+            }
+            
+            if ( advanced_filter && advanced_filter.getFilters() ) {
+                me.sprint_table.applyFilters(advanced_filter.getFilters());
+            }
+        }, this, { single: true });
     },
     
     getOptions: function() {
@@ -3075,6 +3600,10 @@ div.ts_task_card {
 
 .ts-editor-field-contents {
     font-size: 14px;
+}
+.remove-quick-filter-icon {
+    float: left;
+    color: #00a9e0;
 }
     </style>
 

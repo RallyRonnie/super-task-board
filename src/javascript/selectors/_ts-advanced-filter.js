@@ -17,16 +17,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
             items: [
                 {
                     xtype       : 'container',
-                    itemId      : 'filterBox',
-                    margin      : 5,
-                    padding     : 5,
-                    flex        : 1
+                    itemId      : 'filterBox'
                 },
                 {
                     xtype       : 'container',
                     itemId      : 'selectorBox',
-                    margin      : 5,
-                    padding     : 5,
                     flex        : 1
                 }
             ]
@@ -35,28 +30,39 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     
     rows: [],
     filters: [],
+    quickFilters: [],
     operator: 'and',
     
     config: {
+        /**
+         *  {Boolean} true to allow user to show/add advanced filter rows
+         */
+        allowAdvancedFilters: true,
         
+        allowQuickFilters: true
     },
 
     /**
-     * Gets the current state of the object. By default this function returns null,
-     * it should be overridden in subclasses to implement methods for getting the state.
+     * Gets the current state of the object. 
      * @return {Object} The current state
      */
     getState: function(){
         return { 
             filters: this._getFilterConfigs(),
-            operator: this.operator
+            operator: this.operator,
+            quickFilterMap: this._getQuickFilterConfig(),
+            quickFilters: this.quickFilters
         };
     },
     
-
     constructor: function(config) {
         this.mergeConfig(config);
         this.callParent([this.config]);
+        this._setButton();
+        this.down('#filterButton').on('click', this._showHideFilters, this);
+        if ( this.quickFilters && this.quickFilters.length > 0 ) {
+            this.fireEvent('filterselected', this, this.quickFilters);
+        }
     },
 
     initComponent: function() {
@@ -71,8 +77,6 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
              */
             'filterselected'
         );
-        
-        this.down('#filterButton').on('click', this._showHideFilters, this);
     },
     
     _showHideFilters: function(button) {
@@ -101,41 +105,65 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         this.rows = Ext.ComponentQuery.query('tsadvancedfilterrow');
     },
     
+    _addQuickRow: function() {
+        
+        this.down('#filterBox').add({
+            xtype:'tsadvancedfilterquickrow',
+            initialValues: this.quickFilterMap,
+            listeners: {
+                scope: this,
+                quickfilterchange: function(row, filters) {
+                    console.log('filters:', filters);
+                    this.quickFilters = filters;
+                    this.quickFilterMap = this._getQuickFilterConfig();
+                    this._setButton();
+                    this.fireEvent('filterselected', this, filters);
+                }
+            }
+        });
+    },
+    
     _showFilters: function() {
         var filter_box = this.down('#filterBox');
         filter_box.removeAll();
         
-        if ( this.filters.length === 0 ) {
-            this._addRow();
-        } else {
-            Ext.Array.each(this.filters, function(filter){
-                this._addRow(filter);
-            }, this);
+        if ( this.allowQuickFilters ) {
+            this._addQuickRow();
         }
         
-        var selector_box = this.down('#selectorBox');
-        selector_box.removeAll();
-        var store = Ext.create('Rally.data.custom.Store',{
-            data: [
-                {name:'All', value: 'and'},
-                {name:'Any', value: 'or'}
-            ]
-        });
-        
-        selector_box.add({
-            xtype: 'rallycombobox',
-            displayField: 'name',
-            valueField: 'value',
-            store: store,
-            value: this.operator,
-            listeners: {
-                scope: this,
-                change: function(cb) {
-                    this.operator = cb.getValue();
-                    this._setFilters();
-                }
+        if ( this.allowAdvancedFilters ) {
+            if ( this.filters.length === 0 ) {
+                this._addRow();
+            } else {
+                Ext.Array.each(this.filters, function(filter){
+                    this._addRow(filter);
+                }, this);
             }
-        });
+            
+            var selector_box = this.down('#selectorBox');
+            selector_box.removeAll();
+            var store = Ext.create('Rally.data.custom.Store',{
+                data: [
+                    {name:'All', value: 'and'},
+                    {name:'Any', value: 'or'}
+                ]
+            });
+            
+            selector_box.add({
+                xtype: 'rallycombobox',
+                displayField: 'name',
+                valueField: 'value',
+                store: store,
+                value: this.operator,
+                listeners: {
+                    scope: this,
+                    change: function(cb) {
+                        this.operator = cb.getValue();
+                        this._setFilters();
+                    }
+                }
+            });
+        }
         
     },
     
@@ -173,8 +201,13 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     _setButton: function() {
         var button = this.down('#filterButton');
         
-        if ( this.filters && this.filters.length > 0 ) {
-            button.setText('<span class="icon-filter"> </span> (' + this.filters.length + ')');
+        if ( ( this.filters && this.filters.length > 0 ) || ( this.quickFilters && this.quickFilters.length > 0 ) ) {
+            var count = this.filters && this.filters.length || 0;
+            if ( count === 0 ) {
+                count = this.quickFilters && this.quickFilters.length;
+            }
+            
+            button.setText('<span class="icon-filter"> </span> (' + count + ')');
             button.addCls('reverse');
             return;
         }
@@ -187,6 +220,18 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         return Ext.Array.map(this.filters, function(filter) {
             return filter.config;
         });
+    },
+    
+    getFilters: function() {
+        return this.quickFilters || [];
+    },
+    
+    _getQuickFilterConfig: function() {
+        var filter_map = {};
+        Ext.Array.each(this.quickFilters, function(filter) {
+            filter_map[filter.name] = filter;
+        });
+        return filter_map;
     }
     
 });
