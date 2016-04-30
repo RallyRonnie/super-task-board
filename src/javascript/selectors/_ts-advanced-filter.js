@@ -2,6 +2,8 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     extend: 'Ext.container.Container',
     alias: 'widget.tsadvancedfilter',
     
+    layout: 'vbox',
+    
     items: [
         {
             xtype           : 'rallybutton',
@@ -39,7 +41,9 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
          */
         allowAdvancedFilters: true,
         
-        allowQuickFilters: true
+        allowQuickFilters: true,
+        
+        model: 'UserStory'
     },
 
     /**
@@ -110,6 +114,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         this.down('#filterBox').add({
             xtype:'tsadvancedfilterquickrow',
             initialValues: this.quickFilterMap,
+            model: this.model,
             listeners: {
                 scope: this,
                 quickfilterchange: function(row, filters) {

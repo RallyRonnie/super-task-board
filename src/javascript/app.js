@@ -17,7 +17,7 @@ Ext.define("TSSuperCardboard", {
     layout: { type: 'border' },
     
     items: [
-        {xtype:'container', itemId:'selector_box', region: 'north',  layout: { type:'hbox' }, minHeight: 25},
+        {xtype:'container', itemId:'selector_box', region: 'north',  layout: { type:'hbox' }, minHeight: 40},
         {xtype:'container', itemId:'display_box' , region: 'center', layout: { type: 'border'} }
     ],
     
@@ -67,6 +67,7 @@ Ext.define("TSSuperCardboard", {
             allowAdvancedFilters: false,
             allowQuickFilters: true,
             stateEvents: ['filterselected'],
+            model: 'Artifact',
             listeners: {
                 scope: this,
                 filterselected: function(advanced_filter, filters) {

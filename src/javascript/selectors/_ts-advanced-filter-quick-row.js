@@ -10,8 +10,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
             itemId: 'filter_box',
             flex: 1,
             layout: 'hbox',
+            padding: '0 5 5 0',
+            margin: '0 5 5 0',
             defaults: {
-                margin: '0 5 0 0'
+                margin: '0 5 5 0',
+                padding: '0 5 5 0'
             }
         },
         {
@@ -57,8 +60,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
              */
             'quickfilterchange'
         );
-//        
-//        
+
         this.down('#add_button').on('click', this._showQuickFilterPopover, this);
 //        
         if ( Ext.isString(this.model) ) {
@@ -112,7 +114,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     _showQuickFilterPopover: function(button) {
         var addQuickFilterConfig = Ext.clone(this.addQuickFilterConfig);
             var blackList =  _.map(this.fields, 'name');
-
+            
             if (addQuickFilterConfig && addQuickFilterConfig.whiteListFields) {
                 addQuickFilterConfig.whiteListFields = _.reject(this.addQuickFilterConfig.whiteListFields, function(field){
                     return _.contains(blackList, field);
@@ -133,15 +135,15 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
                         }
                     ],
                     blackListFields: blackList,
-                    _getModelNamesForDuplicates: function(field, fields) {
-                        var fieldCounts = _.countBy(fields, 'displayName');
-                        
-                        // TODO figure out what to do about using multiple record types
-//                        if (fieldCounts[field.displayName] > 1) {
-//                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
-//                        }
-                        return '';
-                    },
+//                    _getModelNamesForDuplicates: function(field, fields) {
+//                        var fieldCounts = _.countBy(fields, 'displayName');
+//                        
+//                        // TODO figure out what to do about using multiple record types
+////                        if (fieldCounts[field.displayName] > 1) {
+////                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
+////                        }
+//                        return '';
+//                    },
                     listeners: {
                         select: function(field, value) {
                             var fieldSelected = value[0].raw;
@@ -206,7 +208,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
             labelAlign: 'top',
             labelSeparator: '',
             enableKeyEvents: true,
-           // margin: 0,
+            margin: '0 5 0 0',
             cls: this.isCustomMatchType() ? 'indexed-field' : '',
             model: this.model,
             context: this.context,
@@ -253,6 +255,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
                     scope: this
                 }
             });
+        }
+        
+        if ( fieldConfig.xtype == "rallytextfield" || fieldConfig.xtype == 'rallyartifactsearchfield') {
+            fieldConfig.height = 27;
+            fieldConfig.margin = '2 5 25 0';
         }
 
         return Ext.widget(fieldConfig);

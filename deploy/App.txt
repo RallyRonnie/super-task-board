@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Fri Apr 29 2016 20:40:15 GMT-0700 (PDT) -->
+    <!--  Build Date: Sat Apr 30 2016 09:43:36 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Apr 29 2016 20:40:15 GMT-0700 (PDT)";
-        var CHECKSUM = 231269855761;
+        var APP_BUILD_DATE = "Sat Apr 30 2016 09:43:36 GMT-0700 (PDT)";
+        var CHECKSUM = 233009491887;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -297,8 +297,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
             itemId: 'filter_box',
             flex: 1,
             layout: 'hbox',
+            padding: '0 5 5 0',
+            margin: '0 5 5 0',
             defaults: {
-                margin: '0 5 0 0'
+                margin: '0 5 5 0',
+                padding: '0 5 5 0'
             }
         },
         {
@@ -344,8 +347,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
              */
             'quickfilterchange'
         );
-//        
-//        
+
         this.down('#add_button').on('click', this._showQuickFilterPopover, this);
 //        
         if ( Ext.isString(this.model) ) {
@@ -399,7 +401,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     _showQuickFilterPopover: function(button) {
         var addQuickFilterConfig = Ext.clone(this.addQuickFilterConfig);
             var blackList =  _.map(this.fields, 'name');
-
+            
             if (addQuickFilterConfig && addQuickFilterConfig.whiteListFields) {
                 addQuickFilterConfig.whiteListFields = _.reject(this.addQuickFilterConfig.whiteListFields, function(field){
                     return _.contains(blackList, field);
@@ -420,15 +422,15 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
                         }
                     ],
                     blackListFields: blackList,
-                    _getModelNamesForDuplicates: function(field, fields) {
-                        var fieldCounts = _.countBy(fields, 'displayName');
-                        
-                        // TODO figure out what to do about using multiple record types
-//                        if (fieldCounts[field.displayName] > 1) {
-//                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
-//                        }
-                        return '';
-                    },
+//                    _getModelNamesForDuplicates: function(field, fields) {
+//                        var fieldCounts = _.countBy(fields, 'displayName');
+//                        
+//                        // TODO figure out what to do about using multiple record types
+////                        if (fieldCounts[field.displayName] > 1) {
+////                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
+////                        }
+//                        return '';
+//                    },
                     listeners: {
                         select: function(field, value) {
                             var fieldSelected = value[0].raw;
@@ -493,7 +495,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
             labelAlign: 'top',
             labelSeparator: '',
             enableKeyEvents: true,
-           // margin: 0,
+            margin: '0 5 0 0',
             cls: this.isCustomMatchType() ? 'indexed-field' : '',
             model: this.model,
             context: this.context,
@@ -540,6 +542,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
                     scope: this
                 }
             });
+        }
+        
+        if ( fieldConfig.xtype == "rallytextfield" || fieldConfig.xtype == 'rallyartifactsearchfield') {
+            fieldConfig.height = 27;
+            fieldConfig.margin = '2 5 25 0';
         }
 
         return Ext.widget(fieldConfig);
@@ -995,6 +1002,8 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     extend: 'Ext.container.Container',
     alias: 'widget.tsadvancedfilter',
     
+    layout: 'vbox',
+    
     items: [
         {
             xtype           : 'rallybutton',
@@ -1032,7 +1041,9 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
          */
         allowAdvancedFilters: true,
         
-        allowQuickFilters: true
+        allowQuickFilters: true,
+        
+        model: 'UserStory'
     },
 
     /**
@@ -1103,6 +1114,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         this.down('#filterBox').add({
             xtype:'tsadvancedfilterquickrow',
             initialValues: this.quickFilterMap,
+            model: this.model,
             listeners: {
                 scope: this,
                 quickfilterchange: function(row, filters) {
@@ -3196,7 +3208,7 @@ Ext.define("TSSuperCardboard", {
     layout: { type: 'border' },
     
     items: [
-        {xtype:'container', itemId:'selector_box', region: 'north',  layout: { type:'hbox' }, minHeight: 25},
+        {xtype:'container', itemId:'selector_box', region: 'north',  layout: { type:'hbox' }, minHeight: 40},
         {xtype:'container', itemId:'display_box' , region: 'center', layout: { type: 'border'} }
     ],
     
@@ -3246,6 +3258,7 @@ Ext.define("TSSuperCardboard", {
             allowAdvancedFilters: false,
             allowQuickFilters: true,
             stateEvents: ['filterselected'],
+            model: 'Artifact',
             listeners: {
                 scope: this,
                 filterselected: function(advanced_filter, filters) {
