@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sat Apr 30 2016 09:43:36 GMT-0700 (PDT) -->
+    <!--  Build Date: Sat Apr 30 2016 10:13:05 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sat Apr 30 2016 09:43:36 GMT-0700 (PDT)";
-        var CHECKSUM = 233009491887;
+        var APP_BUILD_DATE = "Sat Apr 30 2016 10:13:05 GMT-0700 (PDT)";
+        var CHECKSUM = 233890025716;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1118,7 +1118,6 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
             listeners: {
                 scope: this,
                 quickfilterchange: function(row, filters) {
-                    console.log('filters:', filters);
                     this.quickFilters = filters;
                     this.quickFilterMap = this._getQuickFilterConfig();
                     this._setButton();
@@ -2263,10 +2262,15 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 'Blocked','Owner','BlockedReason','Description','DragAndDropRank','ScheduleState']
         };
         
-        if ( !Ext.isEmpty(this.filters) ) {
-            store_config.filters = this.filters;
-        }
         
+        if ( !Ext.isEmpty(this.filters) ) {
+            iteration_filter = Ext.create('Rally.data.wsapi.Filter', iteration_filter);
+                        
+            var all_filters = Ext.Array.map(this.filters, function(filter) { return filter; });
+            all_filters.push(iteration_filter[0]);
+            
+            store_config.filters = all_filters;
+        }
         
         var store = Ext.create('Rally.data.wsapi.Store',store_config);
                 
@@ -2786,9 +2790,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             
             rows.push(row);
         });
-        
-        console.log('rows:', rows);
-        
+                
         return rows;
     },
     
@@ -3254,7 +3256,7 @@ Ext.define("TSSuperCardboard", {
         container.add({
             xtype:'tsadvancedfilter',
             stateful: true,
-            stateId: 'super-task-board-advanced-quick-filter',
+            stateId: 'super-task-board-advanced-quick-filter-z',
             allowAdvancedFilters: false,
             allowQuickFilters: true,
             stateEvents: ['filterselected'],

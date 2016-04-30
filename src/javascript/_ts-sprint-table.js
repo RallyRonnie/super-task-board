@@ -236,10 +236,15 @@
                 'Blocked','Owner','BlockedReason','Description','DragAndDropRank','ScheduleState']
         };
         
-        if ( !Ext.isEmpty(this.filters) ) {
-            store_config.filters = this.filters;
-        }
         
+        if ( !Ext.isEmpty(this.filters) ) {
+            iteration_filter = Ext.create('Rally.data.wsapi.Filter', iteration_filter);
+                        
+            var all_filters = Ext.Array.map(this.filters, function(filter) { return filter; });
+            all_filters.push(iteration_filter[0]);
+            
+            store_config.filters = all_filters;
+        }
         
         var store = Ext.create('Rally.data.wsapi.Store',store_config);
                 
@@ -759,9 +764,7 @@
             
             rows.push(row);
         });
-        
-        console.log('rows:', rows);
-        
+                
         return rows;
     },
     
