@@ -1,32 +1,12 @@
-
-Ext.define('CA.techservices.filter.ArtifactSearchField', {
-    alias: 'widget.tsartifactsearchfield',
-    extend: 'Rally.ui.TextField',
-    requires: [
-        'Rally.data.wsapi.Filter'
-    ],
-
-    fieldLabel: 'Search',
-    emptyText: 'Text Search...',
-
-    config: {
-        model: undefined,
-        context: undefined,
-        fieldLabel: null
-    },
-
-    _isValidField: function(model, fieldNames) {
-        var validFields = _.pluck(model.getFields(), 'name');
-        return fieldNames.every(function(fieldName) {
-            return _.contains(validFields, fieldName);
-        });
-    },
+Ext.override(Rally.ui.inlinefilter.ArtifactSearchField,{
     
     getFilter: function() {
+        console.log('here');
         var value = this.lastValue;
         if (!Ext.isEmpty(value)) {
             var filters = [],
                 models = [this.model];
+                //models = this.model.getArtifactComponentModels();
 
             var onlyNumbers = new RegExp('^(\\d+)$');
             if (onlyNumbers.test(value) && this._isValidField(this.model, ['FormattedID'])) {

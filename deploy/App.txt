@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Fri Apr 29 2016 20:26:17 GMT-0700 (PDT) -->
+    <!--  Build Date: Fri Apr 29 2016 20:40:15 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Apr 29 2016 20:26:17 GMT-0700 (PDT)";
-        var CHECKSUM = 233386621587;
+        var APP_BUILD_DATE = "Fri Apr 29 2016 20:40:15 GMT-0700 (PDT)";
+        var CHECKSUM = 231269855761;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -220,35 +220,15 @@ Ext.define('TSUtilities',{
         return deferred.promise;
     }
 });
-
-Ext.define('CA.techservices.filter.ArtifactSearchField', {
-    alias: 'widget.tsartifactsearchfield',
-    extend: 'Rally.ui.TextField',
-    requires: [
-        'Rally.data.wsapi.Filter'
-    ],
-
-    fieldLabel: 'Search',
-    emptyText: 'Text Search...',
-
-    config: {
-        model: undefined,
-        context: undefined,
-        fieldLabel: null
-    },
-
-    _isValidField: function(model, fieldNames) {
-        var validFields = _.pluck(model.getFields(), 'name');
-        return fieldNames.every(function(fieldName) {
-            return _.contains(validFields, fieldName);
-        });
-    },
+Ext.override(Rally.ui.inlinefilter.ArtifactSearchField,{
     
     getFilter: function() {
+        console.log('here');
         var value = this.lastValue;
         if (!Ext.isEmpty(value)) {
             var filters = [],
                 models = [this.model];
+                //models = this.model.getArtifactComponentModels();
 
             var onlyNumbers = new RegExp('^(\\d+)$');
             if (onlyNumbers.test(value) && this._isValidField(this.model, ['FormattedID'])) {
@@ -305,7 +285,6 @@ Ext.define('CA.techservices.filter.ArtifactSearchField', {
         }
     }
 });
-
 Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     extend: 'Ext.container.Container',
     alias: 'widget.tsadvancedfilterquickrow',
