@@ -58,10 +58,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         this.down('#add_button').on('click', this._showQuickFilterPopover, this);
 //        
         if ( Ext.isString(this.model) ) {
-            this._getModel(this.model).then({
+            this._getModels(['UserStory','Defect']).then({
                 scope: this,
-                success: function(model) {
-                    this.model = model;
+                success: function(models) {
+                    this.model = models[0];
+                    this.models = models;
                     this._displaySelectors();
                 },
                 failure: function(msg) {
@@ -87,6 +88,15 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     
     _changeFieldValue: function(field) {
         this.fireEvent('quickfilterchange', this, this.getFilters(), this.getValueMap());
+    },
+    
+    _getModels: function(model_names) {
+        var me = this;
+        var promises = Ext.Array.map(model_names, function(model_name){ 
+            return function() { return me._getModel(model_name); };
+        });
+        
+        return Deft.Chain.sequence(promises);
     },
     
     _getModel: function(model_name) {
@@ -119,6 +129,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
                 placement: ['bottom', 'top', 'left', 'right'],
                 fieldComboBoxConfig: _.merge({
                     model: this.model,
+                    models: this.models,
                     context: this.context || Rally.getApp().getContext(),
                     emptyText: 'Search filters...',
                     additionalFields: [
@@ -127,15 +138,42 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
                             displayName: 'Search'
                         }
                     ],
-//                    blackListFields: blackList,
-//                    _getModelNamesForDuplicates: function(field, fields) {
-//                        var fieldCounts = _.countBy(fields, 'displayName');
-//                        // TODO figure out what to do about using multiple record types
+                    blackListFields: blackList,
+                    _getModelNamesForDuplicates: function(field, fields) {
+                        var fieldCounts = _.countBy(fields, 'displayName');
+                        // TODO figure out what to do about using multiple record types
 //                        if (fieldCounts[field.displayName] > 1) {
 //                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
 //                        }
-//                        return '';
-//                    },
+                        return '';
+                    },
+
+                    _getAllFields: function() {
+                        var fields = [];
+                        Ext.Array.each(this.models, function(model){
+                            fields = Ext.Array.push(fields, model.getFields());
+                        });
+                        
+                        var unique_field_hash = {};
+                        Ext.Array.each(fields, function(field){
+                            if ( Ext.isEmpty( unique_field_hash[field.name] ) ) {
+                                unique_field_hash[field.name] = [];
+                            }
+                            unique_field_hash[field.name].push(field);
+                        });
+                        
+                        var unique_fields = [];
+                        Ext.Object.each(unique_field_hash, function(field_name,field_value){
+                            if ( field_value.length == this.models.length) {
+                                unique_fields.push(field_value[0]);
+                            }
+                        },this);
+                        console.log(unique_fields);
+                        
+                        //return _.merge({}, this.model.getFields(), this.additionalFields);
+                        return _.merge({}, unique_fields, this.additionalFields);
+                    },
+        
                     listeners: {
                         select: function(field, value) {
                             var fieldSelected = value[0].raw;
