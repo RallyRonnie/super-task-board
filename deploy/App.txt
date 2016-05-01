@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sat Apr 30 2016 10:13:05 GMT-0700 (PDT) -->
+    <!--  Build Date: Sun May 01 2016 11:41:00 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sat Apr 30 2016 10:13:05 GMT-0700 (PDT)";
-        var CHECKSUM = 233890025716;
+        var APP_BUILD_DATE = "Sun May 01 2016 11:41:00 GMT-0700 (PDT)";
+        var CHECKSUM = 242370095873;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -227,7 +227,7 @@ Ext.override(Rally.ui.inlinefilter.ArtifactSearchField,{
         var value = this.lastValue;
         if (!Ext.isEmpty(value)) {
             var filters = [],
-                models = [this.model];
+                models = ['UserStory','Defect'];
                 //models = this.model.getArtifactComponentModels();
 
             var onlyNumbers = new RegExp('^(\\d+)$');
@@ -296,13 +296,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
             xtype: 'container',
             itemId: 'filter_box',
             flex: 1,
-            layout: 'hbox',
-            padding: '0 5 5 0',
-            margin: '0 5 5 0',
-            defaults: {
-                margin: '0 5 5 0',
-                padding: '0 5 5 0'
-            }
+            layout: 'hbox'
         },
         {
             xtype:'container',
@@ -319,10 +313,10 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     ],
     
     config: {
-        model: 'UserStory',
+        model: 'Artifact',
         filter: null,
         addQuickFilterConfig: {
-            whiteListFields: ['ArtifactSearch']
+            whiteListFields: ['ArtifactSearch','ScheduleState']
         },
         fields: [],
         initialValues: {}
@@ -380,7 +374,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     },
     
     _changeFieldValue: function(field) {
-        this.fireEvent('quickfilterchange', this, this.getFilters());
+        this.fireEvent('quickfilterchange', this, this.getFilters(), this.getValueMap());
     },
     
     _getModel: function(model_name) {
@@ -421,14 +415,13 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
                             displayName: 'Search'
                         }
                     ],
-                    blackListFields: blackList,
+//                    blackListFields: blackList,
 //                    _getModelNamesForDuplicates: function(field, fields) {
 //                        var fieldCounts = _.countBy(fields, 'displayName');
-//                        
 //                        // TODO figure out what to do about using multiple record types
-////                        if (fieldCounts[field.displayName] > 1) {
-////                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
-////                        }
+//                        if (fieldCounts[field.displayName] > 1) {
+//                            return _.pluck(this.model.getModelsForField(field), 'displayName').join(', ');
+//                        }
 //                        return '';
 //                    },
                     listeners: {
@@ -460,10 +453,19 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
 
 
     _createField: function(filterIndex, field, initialValues) {
+        console.log('create filter', filterIndex, field, initialValues);
+        
         var fieldName = field.name || field,
             modelField = this.model.getField(fieldName),
-            fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
-            initialValue = initialValues && initialValues[fieldConfig.name] && initialValues[fieldConfig.name].rawValue;
+            fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context);
+            
+        var initialValue = null;
+        if ( initialValues && initialValues[fieldConfig.name]) {
+            initialValue = initialValues[fieldConfig.name].rawValue;
+            if ( Ext.isEmpty(initialValue) ) {
+                initialValue = initialValues[fieldConfig.name];
+            }
+        }
 
         if (modelField && modelField.isDate() && initialValue) {
             initialValue = Rally.util.DateTime.fromIsoString(initialValue);
@@ -495,7 +497,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
             labelAlign: 'top',
             labelSeparator: '',
             enableKeyEvents: true,
-            margin: '0 5 0 0',
+            margin: '0 0 0 10',
             cls: this.isCustomMatchType() ? 'indexed-field' : '',
             model: this.model,
             context: this.context,
@@ -545,8 +547,8 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         }
         
         if ( fieldConfig.xtype == "rallytextfield" || fieldConfig.xtype == 'rallyartifactsearchfield') {
-            fieldConfig.height = 27;
-            fieldConfig.margin = '2 5 25 0';
+            fieldConfig.minHeight = 27;
+            fieldConfig.margin = '2 5 25 10';
         }
 
         return Ext.widget(fieldConfig);
@@ -571,7 +573,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         this.fields[arrayIndex] && this.fields[arrayIndex].destroy();
         this.fields.splice(arrayIndex, 1);
         this.updateFilterIndices();
-        this.fireEvent('quickfilterchange', this, this.getFilters());
+        this.fireEvent('quickfilterchange', this, this.getFilters(), this.getValueMap());
 
     },
     
@@ -602,6 +604,16 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
             !fieldConfig.multiSelect;
     },
 
+    getValueMap: function() {
+        var map = {};
+        Ext.Array.each(this.fields, function(field){
+            var key = field.name;
+            console.log(key, field);
+            map[key] = field.getValue();
+        });
+        return map;
+    },
+    
     getFilters: function() {
         var filters = [];
         _.each(this.fields, function(field, index) {
@@ -1054,8 +1066,8 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         return { 
             filters: this._getFilterConfigs(),
             operator: this.operator,
-            quickFilterMap: this._getQuickFilterConfig(),
-            quickFilters: this.quickFilters
+            quickFilterMap: this.quickFilterMap,
+            quickValueMap: this.quickValueMap
         };
     },
     
@@ -1064,7 +1076,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         this.callParent([this.config]);
         this._setButton();
         this.down('#filterButton').on('click', this._showHideFilters, this);
-        if ( this.quickFilters && this.quickFilters.length > 0 ) {
+        
+        if ( !Ext.isEmpty(this.quickFilterMap) && this.quickFilterMap != {} ) {
+            this.quickFilters = this._getFiltersFromMap(this.quickFilterMap);
+        }
+        if ( this.quickFilters ) {
             this.fireEvent('filterselected', this, this.quickFilters);
         }
     },
@@ -1113,15 +1129,16 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         
         this.down('#filterBox').add({
             xtype:'tsadvancedfilterquickrow',
-            initialValues: this.quickFilterMap,
+            initialValues: this.quickValueMap,
             model: this.model,
             listeners: {
                 scope: this,
-                quickfilterchange: function(row, filters) {
+                quickfilterchange: function(row, filters, valuemap) {
                     this.quickFilters = filters;
                     this.quickFilterMap = this._getQuickFilterConfig();
+                    this.quickValueMap = valuemap;
                     this._setButton();
-                    this.fireEvent('filterselected', this, filters);
+                    this.fireEvent('filterselected', this, this.quickFilters);
                 }
             }
         });
@@ -1233,9 +1250,17 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     _getQuickFilterConfig: function() {
         var filter_map = {};
         Ext.Array.each(this.quickFilters, function(filter) {
-            filter_map[filter.name] = filter;
+            filter_map[filter.name] = filter.toString();
         });
         return filter_map;
+    },
+    
+    _getFiltersFromMap: function(filter_map){
+        var filters = [];
+        Ext.Object.each(filter_map, function(field, filter) {
+            filters.push(Rally.data.wsapi.Filter.fromQueryString(filter));
+        });
+        return filters;
     }
     
 });
@@ -2245,6 +2270,46 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
         this._setWorkItemAdderListeners(rows,'defect');
     },
 
+    _decodeFilters: function(filters) {
+        if (!Ext.isArray(filters)) {
+            if (filters === undefined) {
+                filters = [];
+            } else {
+                filters = [filters];
+            }
+        }
+
+        var length = filters.length,
+            Filter = Ext.util.Filter,
+            config, i;
+
+        for (i = 0; i < length; i++) {
+            config = filters[i];
+
+            if (!(config instanceof Filter)) {
+                Ext.apply(config, {
+                    root: 'data'
+                });
+
+                //support for 3.x style filters where a function can be defined as 'fn'
+                if (config.fn) {
+                    config.filterFn = config.fn;
+                }
+
+                //support a function to be passed as a filter definition
+                if (typeof config == 'function') {
+                    config = {
+                        filterFn: config
+                    };
+                }
+
+                filters[i] = new Filter(config);
+            }
+        }
+
+        return filters;
+    },
+    
     _loadWorkItems: function(artifact_type) {
         var deferred = Ext.create('Deft.Deferred');
         
@@ -2262,14 +2327,13 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 'Blocked','Owner','BlockedReason','Description','DragAndDropRank','ScheduleState']
         };
         
-        
-        if ( !Ext.isEmpty(this.filters) ) {
-            iteration_filter = Ext.create('Rally.data.wsapi.Filter', iteration_filter);
-                        
-            var all_filters = Ext.Array.map(this.filters, function(filter) { return filter; });
-            all_filters.push(iteration_filter[0]);
+        if ( !Ext.isEmpty(this.filters) && this.filters.length > 0 ) {
+            var filters = Ext.Array.map(this.filters, function(filter) {
+                var filter = filter.config;
+                return filter;
+            });
             
-            store_config.filters = all_filters;
+            store_config.filters = Ext.Array.flatten([this.filters, iteration_filter]);
         }
         
         var store = Ext.create('Rally.data.wsapi.Store',store_config);
@@ -3256,11 +3320,11 @@ Ext.define("TSSuperCardboard", {
         container.add({
             xtype:'tsadvancedfilter',
             stateful: true,
-            stateId: 'super-task-board-advanced-quick-filter-z',
+            stateId: 'super-task-board-advanced-quick-filter-f',
             allowAdvancedFilters: false,
             allowQuickFilters: true,
             stateEvents: ['filterselected'],
-            model: 'Artifact',
+            model: 'UserStory',
             listeners: {
                 scope: this,
                 filterselected: function(advanced_filter, filters) {
@@ -3595,10 +3659,17 @@ div.ts_task_card {
 .ts-editor-field-contents {
     font-size: 14px;
 }
-.remove-quick-filter-icon {
-    float: left;
+.remove-quick-filter-icon{
+    position: relative;
+    right: 5px;
+    top: 8px;
+    color:transparent;
+}
+
+td.x-form-item-body:hover .remove-quick-filter-icon{
     color: #00a9e0;
 }
+
     </style>
 
 </head>

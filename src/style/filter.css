@@ -1,4 +1,10 @@
-.remove-quick-filter-icon {
-    float: left;
+.remove-quick-filter-icon{
+    position: relative;
+    right: 5px;
+    top: 8px;
+    color:transparent;
+}
+
+td.x-form-item-body:hover .remove-quick-filter-icon{
     color: #00a9e0;
 }

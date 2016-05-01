@@ -219,6 +219,46 @@
         this._setWorkItemAdderListeners(rows,'defect');
     },
 
+    _decodeFilters: function(filters) {
+        if (!Ext.isArray(filters)) {
+            if (filters === undefined) {
+                filters = [];
+            } else {
+                filters = [filters];
+            }
+        }
+
+        var length = filters.length,
+            Filter = Ext.util.Filter,
+            config, i;
+
+        for (i = 0; i < length; i++) {
+            config = filters[i];
+
+            if (!(config instanceof Filter)) {
+                Ext.apply(config, {
+                    root: 'data'
+                });
+
+                //support for 3.x style filters where a function can be defined as 'fn'
+                if (config.fn) {
+                    config.filterFn = config.fn;
+                }
+
+                //support a function to be passed as a filter definition
+                if (typeof config == 'function') {
+                    config = {
+                        filterFn: config
+                    };
+                }
+
+                filters[i] = new Filter(config);
+            }
+        }
+
+        return filters;
+    },
+    
     _loadWorkItems: function(artifact_type) {
         var deferred = Ext.create('Deft.Deferred');
         
@@ -236,14 +276,13 @@
                 'Blocked','Owner','BlockedReason','Description','DragAndDropRank','ScheduleState']
         };
         
-        
-        if ( !Ext.isEmpty(this.filters) ) {
-            iteration_filter = Ext.create('Rally.data.wsapi.Filter', iteration_filter);
-                        
-            var all_filters = Ext.Array.map(this.filters, function(filter) { return filter; });
-            all_filters.push(iteration_filter[0]);
+        if ( !Ext.isEmpty(this.filters) && this.filters.length > 0 ) {
+            var filters = Ext.Array.map(this.filters, function(filter) {
+                var filter = filter.config;
+                return filter;
+            });
             
-            store_config.filters = all_filters;
+            store_config.filters = Ext.Array.flatten([this.filters, iteration_filter]);
         }
         
         var store = Ext.create('Rally.data.wsapi.Store',store_config);

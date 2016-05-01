@@ -5,7 +5,7 @@ Ext.override(Rally.ui.inlinefilter.ArtifactSearchField,{
         var value = this.lastValue;
         if (!Ext.isEmpty(value)) {
             var filters = [],
-                models = [this.model];
+                models = ['UserStory','Defect'];
                 //models = this.model.getArtifactComponentModels();
 
             var onlyNumbers = new RegExp('^(\\d+)$');

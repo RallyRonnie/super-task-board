@@ -54,8 +54,8 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         return { 
             filters: this._getFilterConfigs(),
             operator: this.operator,
-            quickFilterMap: this._getQuickFilterConfig(),
-            quickFilters: this.quickFilters
+            quickFilterMap: this.quickFilterMap,
+            quickValueMap: this.quickValueMap
         };
     },
     
@@ -64,7 +64,11 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         this.callParent([this.config]);
         this._setButton();
         this.down('#filterButton').on('click', this._showHideFilters, this);
-        if ( this.quickFilters && this.quickFilters.length > 0 ) {
+        
+        if ( !Ext.isEmpty(this.quickFilterMap) && this.quickFilterMap != {} ) {
+            this.quickFilters = this._getFiltersFromMap(this.quickFilterMap);
+        }
+        if ( this.quickFilters ) {
             this.fireEvent('filterselected', this, this.quickFilters);
         }
     },
@@ -113,15 +117,16 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         
         this.down('#filterBox').add({
             xtype:'tsadvancedfilterquickrow',
-            initialValues: this.quickFilterMap,
+            initialValues: this.quickValueMap,
             model: this.model,
             listeners: {
                 scope: this,
-                quickfilterchange: function(row, filters) {
+                quickfilterchange: function(row, filters, valuemap) {
                     this.quickFilters = filters;
                     this.quickFilterMap = this._getQuickFilterConfig();
+                    this.quickValueMap = valuemap;
                     this._setButton();
-                    this.fireEvent('filterselected', this, filters);
+                    this.fireEvent('filterselected', this, this.quickFilters);
                 }
             }
         });
@@ -233,9 +238,17 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     _getQuickFilterConfig: function() {
         var filter_map = {};
         Ext.Array.each(this.quickFilters, function(filter) {
-            filter_map[filter.name] = filter;
+            filter_map[filter.name] = filter.toString();
         });
         return filter_map;
+    },
+    
+    _getFiltersFromMap: function(filter_map){
+        var filters = [];
+        Ext.Object.each(filter_map, function(field, filter) {
+            filters.push(Rally.data.wsapi.Filter.fromQueryString(filter));
+        });
+        return filters;
     }
     
 });

@@ -63,11 +63,11 @@ Ext.define("TSSuperCardboard", {
         container.add({
             xtype:'tsadvancedfilter',
             stateful: true,
-            stateId: 'super-task-board-advanced-quick-filter-z',
+            stateId: 'super-task-board-advanced-quick-filter-f',
             allowAdvancedFilters: false,
             allowQuickFilters: true,
             stateEvents: ['filterselected'],
-            model: 'Artifact',
+            model: 'UserStory',
             listeners: {
                 scope: this,
                 filterselected: function(advanced_filter, filters) {
