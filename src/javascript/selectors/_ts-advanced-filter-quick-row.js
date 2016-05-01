@@ -77,7 +77,6 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         var model = this.model,
             me = this;
             
-        console.log("--", this.initialValues);
         Ext.Array.each(Ext.Object.getKeys(this.initialValues), function(field_name, idx){
             var newItem = me._createField(idx+1, field_name, me.initialValues);
             me.fields.push(newItem);
@@ -165,9 +164,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     },
 
 
-    _createField: function(filterIndex, field, initialValues) {
-        console.log('create filter', filterIndex, field, initialValues);
-        
+    _createField: function(filterIndex, field, initialValues) {        
         var fieldName = field.name || field,
             modelField = this.model.getField(fieldName),
             fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context);
@@ -260,7 +257,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         }
         
         if ( fieldConfig.xtype == "rallytextfield" || fieldConfig.xtype == 'rallyartifactsearchfield') {
-            fieldConfig.minHeight = 27;
+            fieldConfig.height = 40;
             fieldConfig.margin = '2 5 25 10';
         }
 
@@ -321,7 +318,6 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         var map = {};
         Ext.Array.each(this.fields, function(field){
             var key = field.name;
-            console.log(key, field);
             map[key] = field.getValue();
         });
         return map;

@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sun May 01 2016 11:41:00 GMT-0700 (PDT) -->
+    <!--  Build Date: Sun May 01 2016 11:43:44 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun May 01 2016 11:41:00 GMT-0700 (PDT)";
-        var CHECKSUM = 242370095873;
+        var APP_BUILD_DATE = "Sun May 01 2016 11:43:44 GMT-0700 (PDT)";
+        var CHECKSUM = 241533063727;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -364,7 +364,6 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         var model = this.model,
             me = this;
             
-        console.log("--", this.initialValues);
         Ext.Array.each(Ext.Object.getKeys(this.initialValues), function(field_name, idx){
             var newItem = me._createField(idx+1, field_name, me.initialValues);
             me.fields.push(newItem);
@@ -452,9 +451,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
     },
 
 
-    _createField: function(filterIndex, field, initialValues) {
-        console.log('create filter', filterIndex, field, initialValues);
-        
+    _createField: function(filterIndex, field, initialValues) {        
         var fieldName = field.name || field,
             modelField = this.model.getField(fieldName),
             fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context);
@@ -547,7 +544,7 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         }
         
         if ( fieldConfig.xtype == "rallytextfield" || fieldConfig.xtype == 'rallyartifactsearchfield') {
-            fieldConfig.minHeight = 27;
+            fieldConfig.height = 40;
             fieldConfig.margin = '2 5 25 10';
         }
 
@@ -608,7 +605,6 @@ Ext.define('CA.technicalservices.filter.AdvancedFilterQuickRow',{
         var map = {};
         Ext.Array.each(this.fields, function(field){
             var key = field.name;
-            console.log(key, field);
             map[key] = field.getValue();
         });
         return map;
