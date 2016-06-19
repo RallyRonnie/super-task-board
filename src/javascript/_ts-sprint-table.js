@@ -757,14 +757,22 @@
         if ( this.iteration ) {
             iteration_filter = [{property:'Iteration.Name', value:this.iteration.get('Name')}];
         }
-        
-        var filters = iteration_filter;
-        
-        Ext.Array.each(this.filters, function(filter){
+                
+        var filters = Ext.create('Rally.data.wsapi.Filter',iteration_filter[0]);
+            
+        Ext.Array.each(this.filters, function(filter) {
             var config = filter.config;
-            if ( filter.property == "Owner" ) {
-                filters.push(config);
+            
+            var add_ons = Ext.create('Rally.data.wsapi.Filter',config);
+            if ( config.property == "Owner" ) {
+                var task_config = {
+                    property:'WorkProduct.Owner',
+                    value: config.value
+                };
+                add_ons = add_ons.or(Ext.create('Rally.data.wsapi.Filter',task_config));
             }
+            
+            filters = filters.and(add_ons);
         });
         
         var task_store = Ext.create('Rally.data.wsapi.Store',{
