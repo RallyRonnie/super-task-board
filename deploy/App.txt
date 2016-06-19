@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sun Jun 19 2016 15:19:19 GMT-0700 (PDT) -->
+    <!--  Build Date: Sun Jun 19 2016 15:35:25 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Jun 19 2016 15:19:19 GMT-0700 (PDT)";
-        var CHECKSUM = 250718531605;
+        var APP_BUILD_DATE = "Sun Jun 19 2016 15:35:25 GMT-0700 (PDT)";
+        var CHECKSUM = 252262108368;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1105,6 +1105,14 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         };
     },
     
+    applyState: function(state) {
+        if (state) {
+            Ext.apply(this, state);
+        }
+
+        this._setButton();
+    },
+    
     constructor: function(config) {
         this.mergeConfig(config);
         this.callParent([this.config]);
@@ -1256,14 +1264,24 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     _setButton: function() {
         var button = this.down('#filterButton');
         
-        if ( ( this.filters && this.filters.length > 0 ) || ( this.quickFilters && this.quickFilters.length > 0 ) ) {
+        if ( ( this.filters && this.filters.length > 0 ) 
+            || ( this.quickFilters && this.quickFilters.length > 0 ) 
+            || ( !Ext.isEmpty(this.quickFilterMap) ) ) {
             var count = this.filters && this.filters.length || 0;
             if ( count === 0 ) {
                 count = this.quickFilters && this.quickFilters.length;
             }
             
-            button.setText('<span class="icon-filter"> </span> (' + count + ')');
-            button.addCls('reverse');
+            if ( count === 0 && !Ext.isEmpty(this.quickFilterMap)) {
+                count = Ext.Object.getKeys(this.quickFilterMap).length;
+            }
+            
+            if ( count > 0 ) {
+                button.setText('<span class="icon-filter"> </span> (' + count + ')');
+                button.addCls('reverse');
+            } else {
+                button.setText('<span class="icon-filter"> </span>');
+            }
             return;
         }
         
@@ -2211,7 +2229,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
     
     applyFilters: function(filters) {
         this.filters = filters;
-        console.log('filters:', filters);
         this._makeGrid();
     },
     
@@ -2379,8 +2396,6 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                 
                 filters = filters.and(add_ons);
             });
-            
-            console.log('++', filters.toString());
             
             store_config.filters = filters;
         }

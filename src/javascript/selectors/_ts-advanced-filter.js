@@ -59,6 +59,14 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
         };
     },
     
+    applyState: function(state) {
+        if (state) {
+            Ext.apply(this, state);
+        }
+
+        this._setButton();
+    },
+    
     constructor: function(config) {
         this.mergeConfig(config);
         this.callParent([this.config]);
@@ -210,14 +218,24 @@ Ext.define('CA.technicalservices.filter.AdvancedFilter',{
     _setButton: function() {
         var button = this.down('#filterButton');
         
-        if ( ( this.filters && this.filters.length > 0 ) || ( this.quickFilters && this.quickFilters.length > 0 ) ) {
+        if ( ( this.filters && this.filters.length > 0 ) 
+            || ( this.quickFilters && this.quickFilters.length > 0 ) 
+            || ( !Ext.isEmpty(this.quickFilterMap) ) ) {
             var count = this.filters && this.filters.length || 0;
             if ( count === 0 ) {
                 count = this.quickFilters && this.quickFilters.length;
             }
             
-            button.setText('<span class="icon-filter"> </span> (' + count + ')');
-            button.addCls('reverse');
+            if ( count === 0 && !Ext.isEmpty(this.quickFilterMap)) {
+                count = Ext.Object.getKeys(this.quickFilterMap).length;
+            }
+            
+            if ( count > 0 ) {
+                button.setText('<span class="icon-filter"> </span> (' + count + ')');
+                button.addCls('reverse');
+            } else {
+                button.setText('<span class="icon-filter"> </span>');
+            }
             return;
         }
         

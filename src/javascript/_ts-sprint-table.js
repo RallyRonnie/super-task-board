@@ -126,7 +126,6 @@
     
     applyFilters: function(filters) {
         this.filters = filters;
-        console.log('filters:', filters);
         this._makeGrid();
     },
     
@@ -294,8 +293,6 @@
                 
                 filters = filters.and(add_ons);
             });
-            
-            console.log('++', filters.toString());
             
             store_config.filters = filters;
         }
