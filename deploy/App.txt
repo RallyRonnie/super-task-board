@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sun Jun 19 2016 15:35:25 GMT-0700 (PDT) -->
+    <!--  Build Date: Sun Jun 19 2016 15:45:15 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Jun 19 2016 15:35:25 GMT-0700 (PDT)";
-        var CHECKSUM = 252262108368;
+        var APP_BUILD_DATE = "Sun Jun 19 2016 15:45:15 GMT-0700 (PDT)";
+        var CHECKSUM = 252248656173;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -2861,7 +2861,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             iteration_filter = [{property:'Iteration.Name', value:this.iteration.get('Name')}];
         }
         
-        var filters = [iteration_filter];
+        var filters = iteration_filter;
         
         Ext.Array.each(this.filters, function(filter){
             var config = filter.config;

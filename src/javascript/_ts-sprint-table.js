@@ -758,7 +758,7 @@
             iteration_filter = [{property:'Iteration.Name', value:this.iteration.get('Name')}];
         }
         
-        var filters = [iteration_filter];
+        var filters = iteration_filter;
         
         Ext.Array.each(this.filters, function(filter){
             var config = filter.config;
