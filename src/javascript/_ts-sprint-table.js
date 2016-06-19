@@ -126,6 +126,7 @@
     
     applyFilters: function(filters) {
         this.filters = filters;
+        console.log('filters:', filters);
         this._makeGrid();
     },
     
@@ -277,16 +278,30 @@
         };
         
         if ( !Ext.isEmpty(this.filters) && this.filters.length > 0 ) {
-            var filters = Ext.Array.map(this.filters, function(filter) {
-                var filter = filter.config;
-                return filter;
+            var filters = Ext.create('Rally.data.wsapi.Filter',iteration_filter[0]);
+            
+            Ext.Array.each(this.filters, function(filter) {
+                var config = filter.config;
+                
+                var add_ons = Ext.create('Rally.data.wsapi.Filter',config);
+                if ( config.property == "Owner" ) {
+                    var task_config = {
+                        property:'Tasks.Owner',
+                        value: config.value
+                    };
+                    add_ons = add_ons.or(Ext.create('Rally.data.wsapi.Filter',task_config));
+                }
+                
+                filters = filters.and(add_ons);
             });
             
-            store_config.filters = Ext.Array.flatten([this.filters, iteration_filter]);
+            console.log('++', filters.toString());
+            
+            store_config.filters = filters;
         }
         
         var store = Ext.create('Rally.data.wsapi.Store',store_config);
-                
+        
         store.load({
             scope: this,
             callback : function(records, operation, successful) {
@@ -746,11 +761,20 @@
             iteration_filter = [{property:'Iteration.Name', value:this.iteration.get('Name')}];
         }
         
+        var filters = [iteration_filter];
+        
+        Ext.Array.each(this.filters, function(filter){
+            var config = filter.config;
+            if ( filter.property == "Owner" ) {
+                filters.push(config);
+            }
+        });
+        
         var task_store = Ext.create('Rally.data.wsapi.Store',{
             model: 'Task',
             context: { projectScopeDown: false, projectScopeUp: false },
             sorters: [{property:'TaskIndex',direction:'ASC'}],
-            filters: iteration_filter,
+            filters: filters,
             fetch: ['FormattedID', 'Name', 'ObjectID','DisplayColor','Description',
                 'Project',this.taskStateField, 'Owner', 'Blocked', 'BlockedReason',
                 'Estimate','ToDo','WorkProduct']
