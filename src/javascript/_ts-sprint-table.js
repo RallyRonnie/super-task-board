@@ -763,16 +763,16 @@
         Ext.Array.each(this.filters, function(filter) {
             var config = filter.config;
             
-            var add_ons = Ext.create('Rally.data.wsapi.Filter',config);
             if ( config.property == "Owner" ) {
+                var add_ons = Ext.create('Rally.data.wsapi.Filter',config);
                 var task_config = {
                     property:'WorkProduct.Owner',
                     value: config.value
                 };
                 add_ons = add_ons.or(Ext.create('Rally.data.wsapi.Filter',task_config));
+                filters = filters.and(add_ons);
             }
             
-            filters = filters.and(add_ons);
         });
         
         var task_store = Ext.create('Rally.data.wsapi.Store',{
