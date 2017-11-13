@@ -506,7 +506,14 @@
             },this);
         }
     },
-    
+// Original FormattedID link for User Stories - removed to not pop QDP first, popps details pop-up
+// where you can then select FormattedID in title to pop QDP
+//    '<span class="formatted-id-template">',
+//    '<a class="formatted-id-link" target="_parent" href="{[this.getArtifactURL(values)]}">',
+//        '<span class="{[this.getArtifactIcon(values)]}"> </span> {FormattedID}',
+//    '</a>',
+// '</span>',
+
     workproductTemplate: new Ext.XTemplate(
         "<tpl>",
             '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard {[this.getBlockedClass(values.Blocked)]}">',
@@ -518,9 +525,7 @@
                                 '<div class="left-header">',
                                     '<div class="id" style="min-width: 68px">',
                                         '<span class="formatted-id-template">',
-                                            '<a class="formatted-id-link" target="_blank" href="{[this.getArtifactURL(values)]}">',
-                                                '<span class="{[this.getArtifactIcon(values)]}"> </span> {FormattedID}',
-                                            '</a>',
+                                            '{FormattedID}',
                                         '</span>',
                                     '</div> ',
                                     '<div class="owner-name">{[this.getOwnerName(values.Owner)]}</div>',

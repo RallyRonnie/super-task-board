@@ -3,11 +3,11 @@
 <head>
     <title>TS Super Cardboard</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Thu Aug 18 2016 19:27:03 GMT-0700 (PDT) -->
+    <!--  Build Date: Fri Nov 10 2017 10:39:45 GMT-0600 (Central Standard Time) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Thu Aug 18 2016 19:27:03 GMT-0700 (PDT)";
-        var CHECKSUM = 253894313819;
+        var APP_BUILD_DATE = "Fri Nov 10 2017 10:39:45 GMT-0600 (Central Standard Time)";
+        var CHECKSUM = 256118079968;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1352,7 +1352,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         this.title = config.title || this._getTitle( this.record );
         
         this.width = this.width || Ext.Array.min([ 600, Ext.getBody().getWidth() - 50 ]);
-        this.height = this.height || Ext.Array.min([ 500, Ext.getBody().getHeight() - 50 ]),
+        this.height = this.height || Ext.Array.min([ 600, Ext.getBody().getHeight() - 50 ]),
         
         this.callParent([this.config]);
     },
@@ -1420,7 +1420,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             ui: 'footer',
             items: [{
                 xtype: 'rallybutton',
-                text: 'Close',
+                text: 'Done',
                 cls: 'secondary rly-small',
                 handler: this.close,
                 scope: this,
@@ -1442,7 +1442,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _getTitle: function(record) {
         var icon = Rally.technicalservices.IconUtility.getIconForType(record.get('_type'));
-        return Ext.String.format("<span class='{0}'> </span><a href='{1}' target='_blank'>{2}</a>", 
+        return Ext.String.format("<span class='{0}'> </span><a href='{1}' target='_parent'>{2}</a>", 
             icon, 
             Rally.nav.Manager.getDetailUrl(record),
             record.get('FormattedID')
@@ -1463,7 +1463,8 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         if ( this.record.get('_type') == 'task' ) {
             Ext.Array.push(display_fields, [
                 { text: 'Estimate', dataIndex: 'Estimate', editor: { xtype: 'rallynumberfield', minValue: 0 } },
-                { text: 'To Do', dataIndex: 'ToDo', editor: { xtype: 'rallynumberfield', minValue: 0}}
+                { text: 'To Do', dataIndex: 'ToDo', editor: { xtype: 'rallynumberfield', minValue: 0}},
+                { text: 'Actuals', dataIndex: 'Actuals', editor: { xtype: 'rallynumberfield', minValue: 0}}
             ]);
         } else {
             display_fields.push({ text: 'Story Points', dataIndex: 'PlanEstimate', editor: { xtype: 'rallynumberfield', minValue: 0}});
@@ -2609,7 +2610,14 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
             },this);
         }
     },
-    
+// Original FormattedID link for User Stories - removed to not pop QDP first, popps details pop-up
+// where you can then select FormattedID in title to pop QDP
+//    '<span class="formatted-id-template">',
+//    '<a class="formatted-id-link" target="_parent" href="{[this.getArtifactURL(values)]}">',
+//        '<span class="{[this.getArtifactIcon(values)]}"> </span> {FormattedID}',
+//    '</a>',
+// '</span>',
+
     workproductTemplate: new Ext.XTemplate(
         "<tpl>",
             '<div class="x4-component rui-card {_type} x4-border-box xdrag-handle cardboard {[this.getBlockedClass(values.Blocked)]}">',
@@ -2621,9 +2629,7 @@ Ext.define('Rally.technicalservices.TSCellDragDrop', {
                                 '<div class="left-header">',
                                     '<div class="id" style="min-width: 68px">',
                                         '<span class="formatted-id-template">',
-                                            '<a class="formatted-id-link" target="_blank" href="{[this.getArtifactURL(values)]}">',
-                                                '<span class="{[this.getArtifactIcon(values)]}"> </span> {FormattedID}',
-                                            '</a>',
+                                            '{FormattedID}',
                                         '</span>',
                                     '</div> ',
                                     '<div class="owner-name">{[this.getOwnerName(values.Owner)]}</div>',
@@ -3108,7 +3114,7 @@ Ext.define('Rally.technicalservices.sprintboard.TaskCard',{
     renderTpl: new Ext.XTemplate(
         '<tpl>',
             '<div id="T{$comp.record.ObjectID}" class="ts_task_card {$comp.record._type} {[this.getBlockedClass(values.$comp.record.Blocked)]}" style="{[this.getStyle(values.$comp.record)]}">',
-                '{$comp.record.Name:ellipsis(15, true)}',
+                '{$comp.record.Name:ellipsis(45, true)}',
             '</div>',
         '</tpl>',
         {
@@ -3711,12 +3717,12 @@ table {
 }
 
 div.ts_task_card {
-    margin: 2px;
-    padding: 2px;
-    width: 50px;
-    height:35px;
+    margin: 1px;
+    padding: 1px;
+    width: 70px;
+    height:36px;
     text-align: center;
-    font-size: 9px;
+    font-size: 8px;
     border: 1px solid black;
     float: left;
     overflow: hidden;
@@ -3755,4 +3761,4 @@ td.x-form-item-body:hover .remove-quick-filter-icon{
 
 </head>
 <body></body>
-</html>
+</html>

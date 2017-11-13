@@ -35,7 +35,7 @@ Ext.define('Rally.technicalservices.sprintboard.TaskCard',{
     renderTpl: new Ext.XTemplate(
         '<tpl>',
             '<div id="T{$comp.record.ObjectID}" class="ts_task_card {$comp.record._type} {[this.getBlockedClass(values.$comp.record.Blocked)]}" style="{[this.getStyle(values.$comp.record)]}">',
-                '{$comp.record.Name:ellipsis(15, true)}',
+                '{$comp.record.Name:ellipsis(45, true)}',
             '</div>',
         '</tpl>',
         {

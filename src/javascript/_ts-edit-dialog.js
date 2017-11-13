@@ -34,7 +34,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         this.title = config.title || this._getTitle( this.record );
         
         this.width = this.width || Ext.Array.min([ 600, Ext.getBody().getWidth() - 50 ]);
-        this.height = this.height || Ext.Array.min([ 500, Ext.getBody().getHeight() - 50 ]),
+        this.height = this.height || Ext.Array.min([ 600, Ext.getBody().getHeight() - 50 ]),
         
         this.callParent([this.config]);
     },
@@ -102,7 +102,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
             ui: 'footer',
             items: [{
                 xtype: 'rallybutton',
-                text: 'Close',
+                text: 'Done',
                 cls: 'secondary rly-small',
                 handler: this.close,
                 scope: this,
@@ -124,7 +124,7 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
     
     _getTitle: function(record) {
         var icon = Rally.technicalservices.IconUtility.getIconForType(record.get('_type'));
-        return Ext.String.format("<span class='{0}'> </span><a href='{1}' target='_blank'>{2}</a>", 
+        return Ext.String.format("<span class='{0}'> </span><a href='{1}' target='_parent'>{2}</a>", 
             icon, 
             Rally.nav.Manager.getDetailUrl(record),
             record.get('FormattedID')
@@ -145,7 +145,8 @@ Ext.define('Rally.technicalservices.artifact.EditDialog', {
         if ( this.record.get('_type') == 'task' ) {
             Ext.Array.push(display_fields, [
                 { text: 'Estimate', dataIndex: 'Estimate', editor: { xtype: 'rallynumberfield', minValue: 0 } },
-                { text: 'To Do', dataIndex: 'ToDo', editor: { xtype: 'rallynumberfield', minValue: 0}}
+                { text: 'To Do', dataIndex: 'ToDo', editor: { xtype: 'rallynumberfield', minValue: 0}},
+                { text: 'Actuals', dataIndex: 'Actuals', editor: { xtype: 'rallynumberfield', minValue: 0}}
             ]);
         } else {
             display_fields.push({ text: 'Story Points', dataIndex: 'PlanEstimate', editor: { xtype: 'rallynumberfield', minValue: 0}});
